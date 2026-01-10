@@ -8,14 +8,44 @@ import { renderLocalPath } from './LocalPath.js';
 import { renderSpinner } from './Spinner.js';
 import { t } from '../i18n/i18n.js';
 
-export function renderModelRow(model, links, modelTypeToDir, showLoading = false) {
+// 模型类型到翻译键的映射
+function getModelTypeTranslationKey(type) {
+    const typeMap = {
+        "主模型": "modelTypeMain",
+        "Checkpoint": "modelTypeMain",
+        "VAE": "modelTypeVAE",
+        "LoRA": "modelTypeLoRA",
+        "ControlNet": "modelTypeControlNet",
+        "放大模型": "modelTypeUpscale",
+        "Upscale": "modelTypeUpscale",
+        "CLIP": "modelTypeCLIP",
+        "CLIP Vision": "modelTypeCLIPVision",
+        "IP-Adapter": "modelTypeIPAdapter",
+        "文本编码器": "modelTypeTextEncoder",
+        "其他": "modelTypeOther"
+    };
+    
+    return typeMap[type] || type; // 如果没有映射，返回原类型
+}
+
+// 翻译模型类型
+function translateModelType(type) {
+    const translationKey = getModelTypeTranslationKey(type);
+    // 如果返回的是翻译键，使用 t() 函数翻译；否则直接返回原类型
+    if (translationKey.startsWith('modelType')) {
+        return t(translationKey) || type;
+    }
+    return type;
+}
+
+export function renderModelRow(model, links, modelTypeToDir, showLoading = false, extraModelPaths = null) {
     const statusColor = model.installed ? "#81c784" : "#e57373";
     const statusText = model.installed ? `✓ ${t('installed')}` : `✗ ${t('missing')}`;
     const rowBgColor = model.installed ? "#1e2e1e" : "#2e1e1e";
     const rowId = `model-row-${model.name.replace(/[^a-zA-Z0-9]/g, '-')}`;
     
-    // 本地目录
-    const localPathHtml = renderLocalPath(model, model.type, modelTypeToDir);
+    // 本地目录（传递 extraModelPaths 和模型名称）
+    const localPathHtml = renderLocalPath(model, model.type, modelTypeToDir, extraModelPaths);
     
     // 模型页面链接（如果需要显示加载状态，显示加载动画）
     const modelPageHtml = showLoading ? renderSpinner(t('searching')) : renderModelPageLinks(links, model.installed);
@@ -41,6 +71,9 @@ export function renderModelRow(model, links, modelTypeToDir, showLoading = false
         `).join('');
     }
     
+    // 翻译模型类型
+    const translatedType = translateModelType(model.type);
+    
     const familyText = model.families && model.families.length > 0 
         ? ` | ${t('family')}: ${model.families.join(', ')}` 
         : ` | ${t('family')}: ${t('unknown')}`;
@@ -51,7 +84,7 @@ export function renderModelRow(model, links, modelTypeToDir, showLoading = false
                 <div style="font-weight: bold; color: #e0e0e0;">${model.name}</div>
                 <div style="font-size: 11px; color: #999; margin-top: 4px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
                     <span>
-                        ${t('type')}: ${model.type}${familyText}
+                        ${t('type')}: ${translatedType}${familyText}
                     </span>
                     ${highlightButtonsHtml}
                 </div>

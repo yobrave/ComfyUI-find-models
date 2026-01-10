@@ -8,7 +8,8 @@ import logging
 from urllib.parse import quote
 
 # 配置日志
-logger = logging.getLogger("ComfyUI-find-models")
+# logger = logging.getLogger("ComfyUI-find-models")
+logger = None  # 禁用 logger
 
 async def search_google_model(model_name):
     """在 Google 上搜索模型（限制在 Civitai、Hugging Face 和 GitHub 网站），返回前 5 个结果"""
@@ -159,9 +160,9 @@ async def search_google_model(model_name):
             "note": None
         }]
     except Exception as e:
-        logger.error(f"[{model_name}] Google 搜索错误: {e}")
+        # logger.error(f"[{model_name}] Google 搜索错误: {e}")
         import traceback
-        logger.error(f"[{model_name}] 详细错误信息: {traceback.format_exc()}")
+        # logger.error(f"[{model_name}] 详细错误信息: {traceback.format_exc()}")
     
     # 即使发生异常，也返回一个 Google 搜索链接
     try:

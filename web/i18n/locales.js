@@ -75,7 +75,10 @@ export const translations = {
         notFound: "Not Found",
         download: "Download",
         search: "Search",
-        other: "Other"
+        other: "Other",
+        
+        // Local Path
+        downloadToPath: "Download to this path"
     },
     zh: {
         // Dialog
@@ -119,7 +122,7 @@ export const translations = {
         modelTypeVAE: "VAE",
         modelTypeTextEncoder: "文本编码器",
         modelTypeCLIP: "CLIP",
-        modelTypeCLIPVision: "CLIP Vision",
+        modelTypeCLIPVision: "CLIP 视觉",
         modelTypeControlNet: "ControlNet",
         modelTypeIPAdapter: "IP-Adapter",
         modelTypeLoRA: "LoRA",
@@ -149,6 +152,9 @@ export const translations = {
         notFound: "未找到",
         download: "下载",
         search: "搜索",
-        other: "其他"
+        other: "其他",
+        
+        // Local Path
+        downloadToPath: "下载到此路径"
     }
 };

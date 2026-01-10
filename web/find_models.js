@@ -31,7 +31,7 @@ async function getExtraModelPaths() {
     try {
         const response = await api.fetchApi("/comfyui-find-models/api/v1/system/extra-model-paths");
         if (!response.ok) {
-            console.warn(`[ComfyUI-find-models] 获取 extra_model_paths 失败: ${response.status}`);
+            // console.warn(`[ComfyUI-find-models] 获取 extra_model_paths 失败: ${response.status}`);
             return null;
         }
         const data = await response.json();
@@ -40,12 +40,12 @@ async function getExtraModelPaths() {
         const result = data.merged || data.from_folder_paths || data.from_yaml_file || null;
         
         if (result) {
-            console.log(`[ComfyUI-find-models] 获取到 extra_model_paths 配置，包含类型:`, Object.keys(result));
+            // console.log(`[ComfyUI-find-models] 获取到 extra_model_paths 配置，包含类型:`, Object.keys(result));
         }
         
         return result;
     } catch (error) {
-        console.warn("[ComfyUI-find-models] 获取 extra_model_paths 配置失败:", error);
+        // console.warn("[ComfyUI-find-models] 获取 extra_model_paths 配置失败:", error);
         return null;
     }
 }
@@ -159,7 +159,7 @@ async function getInstalledModels() {
         
         return installed;
     } catch (error) {
-        console.error("[ComfyUI-find-models] 获取已安装模型列表失败:", error);
+        // console.error("[ComfyUI-find-models] 获取已安装模型列表失败:", error);
         return {
             "主模型": [],
             "VAE": [],
@@ -294,7 +294,7 @@ function getCachedResults(modelName) {
         // console.log(`[ComfyUI-find-models] 使用缓存结果: ${modelName}`);
         return cacheData.results;
     } catch (error) {
-        console.error(`[ComfyUI-find-models] 读取缓存失败: ${error}`);
+        // console.error(`[ComfyUI-find-models] 读取缓存失败: ${error}`);
         return null;
     }
 }
@@ -311,7 +311,7 @@ function setCachedResults(modelName, results) {
         // 减少日志输出，提升性能
         // console.log(`[ComfyUI-find-models] 缓存搜索结果: ${modelName}`);
     } catch (error) {
-        console.error(`[ComfyUI-find-models] 保存缓存失败: ${error}`);
+        // console.error(`[ComfyUI-find-models] 保存缓存失败: ${error}`);
         // 如果存储空间不足，异步清理过期缓存（不阻塞）
         if (error.name === 'QuotaExceededError') {
             setTimeout(() => clearExpiredCache(), 0);
@@ -360,7 +360,7 @@ function clearExpiredCache() {
             });
             
             if (keysToRemove.length > 0) {
-                console.log(`[ComfyUI-find-models] 清理了 ${keysToRemove.length} 个过期缓存`);
+                // console.log(`[ComfyUI-find-models] 清理了 ${keysToRemove.length} 个过期缓存`);
             }
             
             // 如果还有更多缓存项需要检查，继续异步检查
@@ -368,7 +368,7 @@ function clearExpiredCache() {
                 setTimeout(executeCleanup, 100);
             }
         } catch (error) {
-            console.error(`[ComfyUI-find-models] 清理过期缓存失败: ${error}`);
+            // console.error(`[ComfyUI-find-models] 清理过期缓存失败: ${error}`);
         }
     };
     
@@ -389,7 +389,7 @@ function clearModelCache(modelName) {
         // console.log(`[ComfyUI-find-models] 已清除模型缓存: ${modelName}`);
         return true;
     } catch (error) {
-        console.error(`[ComfyUI-find-models] 清除模型缓存失败: ${error}`);
+        // console.error(`[ComfyUI-find-models] 清除模型缓存失败: ${error}`);
         return false;
     }
 }
@@ -455,7 +455,7 @@ async function refreshModelSearch(modelName, modelType, rowElement) {
         
         // 如果还是找不到，创建一个默认的模型信息
         if (!modelInfo) {
-            console.warn(`[ComfyUI-find-models] 无法找到模型信息: ${modelName} (键: ${modelInfoKey})，使用默认值`);
+            // console.warn(`[ComfyUI-find-models] 无法找到模型信息: ${modelName} (键: ${modelInfoKey})，使用默认值`);
             // 检查是否在已安装列表中
             const installedList = installedModels[modelType] || [];
             const modelNameLower = modelName.toLowerCase().trim();
@@ -519,7 +519,7 @@ async function refreshModelSearch(modelName, modelType, rowElement) {
         rowElement.style.background = rowBgColor;
 
     } catch (error) {
-        console.error(`[ComfyUI-find-models] 重新搜索失败: ${error}`);
+        // console.error(`[ComfyUI-find-models] 重新搜索失败: ${error}`);
         // 恢复原始内容
         statusCell.innerHTML = originalStatus;
         localPathCell.innerHTML = originalLocalPath;
@@ -565,7 +565,7 @@ async function searchModelLinks(modelName, modelType, skipCache = false) {
         // 请求失败，返回空数组但不缓存
         return [];
     } catch (error) {
-        console.error(`[ComfyUI-find-models] 搜索模型链接失败: ${error}`);
+        // console.error(`[ComfyUI-find-models] 搜索模型链接失败: ${error}`);
         return [];
     }
 }
@@ -581,12 +581,12 @@ async function analyzeCurrentWorkflow(contentDiv) {
             return;
         }
         
-        console.log("[ComfyUI-find-models] 开始分析工作流...");
+        // console.log("[ComfyUI-find-models] 开始分析工作流...");
         
         // 步骤 2: 提取工作流中的模型需求
         const { models: requiredModels, modelUsageMap, modelNodeMap } = extractModelsFromWorkflow(workflow);
         const totalRequired = Object.values(requiredModels).reduce((sum, models) => sum + models.length, 0);
-        console.log(`[ComfyUI-find-models] 提取到 ${totalRequired} 个模型需求`);
+        // console.log(`[ComfyUI-find-models] 提取到 ${totalRequired} 个模型需求`);
         
         // 步骤 3: 获取已安装的模型列表和 extra_model_paths 配置
         contentDiv.innerHTML = renderLoadingState(t('gettingInstalledModels'));
@@ -597,17 +597,17 @@ async function analyzeCurrentWorkflow(contentDiv) {
         ]);
         
         const totalInstalled = Object.values(installedModels).reduce((sum, models) => sum + models.length, 0);
-        console.log(`[ComfyUI-find-models] 获取到 ${totalInstalled} 个已安装模型`);
+        // console.log(`[ComfyUI-find-models] 获取到 ${totalInstalled} 个已安装模型`);
         
         if (extraModelPaths) {
-            console.log(`[ComfyUI-find-models] 获取到 extra_model_paths 配置:`, extraModelPaths);
+            // console.log(`[ComfyUI-find-models] 获取到 extra_model_paths 配置:`, extraModelPaths);
         } else {
-            console.log(`[ComfyUI-find-models] 未获取到 extra_model_paths 配置，将使用默认路径`);
+            // console.log(`[ComfyUI-find-models] 未获取到 extra_model_paths 配置，将使用默认路径`);
         }
         
         // 步骤 4: 检查模型状态（传入使用状态映射、节点映射和 extra_model_paths 配置）
         const status = checkModelStatus(requiredModels, installedModels, modelUsageMap, modelNodeMap, MODEL_TYPE_TO_DIR, extraModelPaths);
-        console.log(`[ComfyUI-find-models] 已安装: ${status.installed.length}, 缺失: ${status.missing.length}`);
+        // console.log(`[ComfyUI-find-models] 已安装: ${status.installed.length}, 缺失: ${status.missing.length}`);
         
         // 步骤 5: 先显示表格框架（所有模型，缺失的显示加载状态）
         const modelLinks = {};
@@ -635,7 +635,8 @@ async function analyzeCurrentWorkflow(contentDiv) {
             by_family: groupByFamily(status.modelInfo),
             by_type: groupByType(status.modelInfo),
             required_models: requiredModels,
-            installed_models: installedModels
+            installed_models: installedModels,
+            extra_model_paths: extraModelPaths // 保存 extraModelPaths 用于显示路径
         };
         
         // 先显示表格
@@ -665,7 +666,7 @@ async function analyzeCurrentWorkflow(contentDiv) {
                         updateModelRow(contentDiv, model, links);
                         return { model: model.name, success: true };
                     } catch (error) {
-                        console.error(`[ComfyUI-find-models] 搜索模型 ${model.name} 失败:`, error);
+                        // console.error(`[ComfyUI-find-models] 搜索模型 ${model.name} 失败:`, error);
                         updateModelRow(contentDiv, model, []);
                         return { model: model.name, success: false };
                     }
@@ -692,7 +693,8 @@ async function analyzeCurrentWorkflow(contentDiv) {
             by_family: groupByFamily(status.modelInfo),
             by_type: groupByType(status.modelInfo),
             required_models: requiredModels,
-            installed_models: installedModels
+            installed_models: installedModels,
+            extra_model_paths: extraModelPaths // 保存 extraModelPaths 用于显示路径
         };
         
         // 步骤 8: 最终显示结果（更新表格，按使用状态分组）
@@ -700,7 +702,7 @@ async function analyzeCurrentWorkflow(contentDiv) {
         
     } catch (error) {
         contentDiv.innerHTML = renderErrorState(error.message);
-        console.error("Find Models Error:", error);
+        // console.error("Find Models Error:", error);
     }
 }
 
@@ -735,9 +737,9 @@ function displayModelStatus(contentDiv, result) {
     const usedModels = allModels.filter(m => m.isUsed !== false);
     const unusedModels = allModels.filter(m => m.isUsed === false);
     
-    console.log(`[ComfyUI-find-models] 模型分组: 已使用=${usedModels.length}, 未使用=${unusedModels.length}`);
+    // console.log(`[ComfyUI-find-models] 模型分组: 已使用=${usedModels.length}, 未使用=${unusedModels.length}`);
     if (unusedModels.length > 0) {
-        console.log(`[ComfyUI-find-models] 未使用的模型:`, unusedModels.map(m => m.name));
+        // console.log(`[ComfyUI-find-models] 未使用的模型:`, unusedModels.map(m => m.name));
     }
     
     // 对已使用的模型排序：缺失的在前，然后按名称排序
@@ -765,8 +767,8 @@ function displayModelStatus(contentDiv, result) {
                             !links.length && 
                             result.models_to_search && 
                             result.models_to_search.includes(model.name);
-        // 使用组件生成表格行
-        html += renderModelRow(model, links, MODEL_TYPE_TO_DIR, needsLoading);
+        // 使用组件生成表格行（传递 extraModelPaths）
+        html += renderModelRow(model, links, MODEL_TYPE_TO_DIR, needsLoading, result.extra_model_paths);
     }
     
     // 如果有未使用的模型，添加分隔行
@@ -782,8 +784,8 @@ function displayModelStatus(contentDiv, result) {
                                 !links.length && 
                                 result.models_to_search && 
                                 result.models_to_search.includes(model.name);
-            // 使用组件生成表格行
-            html += renderModelRow(model, links, MODEL_TYPE_TO_DIR, needsLoading);
+            // 使用组件生成表格行（传递 extraModelPaths）
+            html += renderModelRow(model, links, MODEL_TYPE_TO_DIR, needsLoading, result.extra_model_paths);
         }
     }
     
@@ -1038,7 +1040,7 @@ function showModelRowLoading(contentDiv, model) {
     const row = contentDiv.querySelector(`#${rowId}`);
     
     if (!row) {
-        console.warn(`[ComfyUI-find-models] 未找到行元素: ${rowId}`);
+        // console.warn(`[ComfyUI-find-models] 未找到行元素: ${rowId}`);
         return;
     }
     
@@ -1048,7 +1050,7 @@ function showModelRowLoading(contentDiv, model) {
     // 获取行中的单元格
     const cells = row.querySelectorAll('td');
     if (cells.length < 5) {
-        console.warn(`[ComfyUI-find-models] 行单元格数量不正确: ${cells.length}`);
+        // console.warn(`[ComfyUI-find-models] 行单元格数量不正确: ${cells.length}`);
         return;
     }
     
@@ -1071,14 +1073,14 @@ function updateModelRow(contentDiv, model, links) {
     const row = contentDiv.querySelector(`#${rowId}`);
     
     if (!row) {
-        console.warn(`[ComfyUI-find-models] 未找到行元素: ${rowId}`);
+        // console.warn(`[ComfyUI-find-models] 未找到行元素: ${rowId}`);
         return;
     }
     
     // 获取行中的单元格
     const cells = row.querySelectorAll('td');
     if (cells.length < 5) {
-        console.warn(`[ComfyUI-find-models] 行单元格数量不正确: ${cells.length}`);
+        // console.warn(`[ComfyUI-find-models] 行单元格数量不正确: ${cells.length}`);
         return;
     }
     
@@ -1131,7 +1133,7 @@ function bindHighlightButtons(contentDiv) {
             if (nodeIdStr) {
                 const nodeId = parseInt(nodeIdStr.trim());
                 if (!isNaN(nodeId)) {
-                    console.log(`[ComfyUI-find-models] 点击高亮按钮，节点索引: ${nodeIndex}, 节点ID: ${nodeId}`);
+                    // console.log(`[ComfyUI-find-models] 点击高亮按钮，节点索引: ${nodeIndex}, 节点ID: ${nodeId}`);
                     // 只高亮单个节点
                     highlightNodes([nodeId]);
                 }
@@ -1140,7 +1142,7 @@ function bindHighlightButtons(contentDiv) {
                 const nodeIdsStr = btn.getAttribute('data-node-ids');
                 if (nodeIdsStr) {
                     const nodeIds = nodeIdsStr.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
-                    console.log(`[ComfyUI-find-models] 点击高亮按钮（旧格式），节点IDs: ${nodeIds.join(', ')}`);
+                    // console.log(`[ComfyUI-find-models] 点击高亮按钮（旧格式），节点IDs: ${nodeIds.join(', ')}`);
                     if (nodeIds.length > 0) {
                         highlightNodes(nodeIds);
                     }
@@ -1153,7 +1155,7 @@ function bindHighlightButtons(contentDiv) {
 // 高亮节点函数
 function highlightNodes(nodeIds) {
     if (!app || !app.graph) {
-        console.warn("[ComfyUI-find-models] 无法访问 ComfyUI graph");
+        // console.warn("[ComfyUI-find-models] 无法访问 ComfyUI graph");
         return;
     }
     
@@ -1177,7 +1179,7 @@ function highlightNodes(nodeIds) {
             
             if (node) {
                 nodesToHighlight.push(node);
-                console.log(`[ComfyUI-find-models] 找到节点 ID: ${nodeId}, 类型: ${node.type || node.class_type || 'unknown'}`);
+                // console.log(`[ComfyUI-find-models] 找到节点 ID: ${nodeId}, 类型: ${node.type || node.class_type || 'unknown'}`);
                 
                 // 保存原始绘制函数
                 if (!node.oldDrawNode) {
@@ -1204,11 +1206,11 @@ function highlightNodes(nodeIds) {
                 node.setDirtyCanvas(true, true);
                 app.canvas.draw(true, true);
             } else {
-                console.warn(`[ComfyUI-find-models] 未找到节点 ID: ${nodeId} (类型: ${typeof nodeId})`);
+                // console.warn(`[ComfyUI-find-models] 未找到节点 ID: ${nodeId} (类型: ${typeof nodeId})`);
                 // 列出所有可用的节点ID用于调试
                 if (app.graph._nodes) {
                     const availableIds = app.graph._nodes.map(n => n.id).slice(0, 10);
-                    console.log(`[ComfyUI-find-models] 可用的节点ID示例: ${availableIds.join(', ')}`);
+                    // console.log(`[ComfyUI-find-models] 可用的节点ID示例: ${availableIds.join(', ')}`);
                 }
             }
         }
@@ -1227,10 +1229,10 @@ function highlightNodes(nodeIds) {
                 clearNodeHighlights();
             }, 10000);
         } else {
-            console.warn("[ComfyUI-find-models] 没有找到任何节点进行高亮");
+            // console.warn("[ComfyUI-find-models] 没有找到任何节点进行高亮");
         }
     } catch (error) {
-        console.error("[ComfyUI-find-models] 高亮节点时出错:", error);
+        // console.error("[ComfyUI-find-models] 高亮节点时出错:", error);
     }
 }
 
@@ -1258,7 +1260,7 @@ function clearNodeHighlights() {
             window._highlightTimeout = null;
         }
     } catch (error) {
-        console.error("[ComfyUI-find-models] 清除高亮时出错:", error);
+        // console.error("[ComfyUI-find-models] 清除高亮时出错:", error);
     }
 }
 
@@ -1281,14 +1283,14 @@ function addFindModelsButton() {
     }
     
     if (!actionbar) {
-        console.log("[ComfyUI-find-models] 未找到 actionbar，100ms 后重试...");
+        // console.log("[ComfyUI-find-models] 未找到 actionbar，100ms 后重试...");
         setTimeout(addFindModelsButton, 100);
         return;
     }
 
     // 检查按钮是否已存在，避免重复添加
     if (document.getElementById("find-models-button")) {
-        console.log("[ComfyUI-find-models] 按钮已存在，跳过添加");
+        // console.log("[ComfyUI-find-models] 按钮已存在，跳过添加");
         return;
     }
 
@@ -1317,9 +1319,9 @@ function addFindModelsButton() {
 
     try {
         actionbar.appendChild(button);
-        console.log("[ComfyUI-find-models] 按钮添加成功");
+        // console.log("[ComfyUI-find-models] 按钮添加成功");
     } catch (error) {
-        console.error("[ComfyUI-find-models] 按钮添加失败:", error);
+        // console.error("[ComfyUI-find-models] 按钮添加失败:", error);
         // 如果添加失败，尝试在 body 中添加
         setTimeout(() => {
             const body = document.body;
@@ -1329,7 +1331,7 @@ function addFindModelsButton() {
                 button.style.right = "10px";
                 button.style.zIndex = "10000";
                 body.appendChild(button);
-                console.log("[ComfyUI-find-models] 按钮已添加到 body");
+                // console.log("[ComfyUI-find-models] 按钮已添加到 body");
             }
         }, 500);
     }
@@ -1362,7 +1364,7 @@ function createMousePosTooltip() {
 // 设置鼠标位置提示
 function setupMousePosTooltip() {
     if (!app || !app.canvas) {
-        console.warn("[ComfyUI-find-models] Canvas 未就绪，延迟设置鼠标位置提示");
+        // console.warn("[ComfyUI-find-models] Canvas 未就绪，延迟设置鼠标位置提示");
         setTimeout(setupMousePosTooltip, 500);
         return;
     }
@@ -1386,7 +1388,7 @@ function setupMousePosTooltip() {
     }
     
     if (!canvasElement) {
-        console.warn("[ComfyUI-find-models] 无法找到 canvas 元素，延迟重试");
+        // console.warn("[ComfyUI-find-models] 无法找到 canvas 元素，延迟重试");
         setTimeout(setupMousePosTooltip, 500);
         return;
     }
@@ -1453,7 +1455,7 @@ function setupMousePosTooltip() {
             }
         } catch (error) {
             // 静默处理错误，避免干扰正常使用
-            console.debug("[ComfyUI-find-models] 获取鼠标位置失败:", error);
+            // console.debug("[ComfyUI-find-models] 获取鼠标位置失败:", error);
             tooltip.style.display = "none";
         }
     });
@@ -1463,14 +1465,14 @@ function setupMousePosTooltip() {
         tooltip.style.display = "none";
     });
     
-    console.log("[ComfyUI-find-models] 鼠标位置提示已启用");
+    // console.log("[ComfyUI-find-models] 鼠标位置提示已启用");
 }
 
 // 初始化
 app.registerExtension({
     name: "ComfyUI.FindModels",
     async setup() {
-        console.log("[ComfyUI-find-models] 扩展初始化开始");
+        // console.log("[ComfyUI-find-models] 扩展初始化开始");
         
         // 异步清理过期缓存，不阻塞初始化
         setTimeout(() => clearExpiredCache(), 1000);
@@ -1481,10 +1483,10 @@ app.registerExtension({
             if (response.ok) {
                 const data = await response.json();
                 VERSION = data.version || VERSION;
-                console.log(`[ComfyUI-find-models] 版本: ${VERSION}`);
+                // console.log(`[ComfyUI-find-models] 版本: ${VERSION}`);
             }
         } catch (error) {
-            console.warn("[ComfyUI-find-models] 获取版本信息失败:", error);
+            // console.warn("[ComfyUI-find-models] 获取版本信息失败:", error);
         }
         
         // 延迟添加按钮，确保 DOM 已加载
@@ -1500,7 +1502,7 @@ app.registerExtension({
         // 如果 500ms 后还没添加成功，再试一次
         setTimeout(() => {
             if (!document.getElementById("find-models-button")) {
-                console.log("[ComfyUI-find-models] 按钮仍未添加，再次尝试...");
+                // console.log("[ComfyUI-find-models] 按钮仍未添加，再次尝试...");
                 addFindModelsButton();
             }
         }, 2000);

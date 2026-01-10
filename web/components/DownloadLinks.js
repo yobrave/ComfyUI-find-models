@@ -30,7 +30,7 @@ export function renderDownloadLinks(links, modelName, modelType, isInstalled) {
             const fileSize = link.file_size ? ` (${(link.file_size / (1024 * 1024)).toFixed(2)} MB)` : '';
             html += `
                 <div style="margin-bottom: 4px;">
-                    <a href="${link.download_url}" target="_blank" style="color: ${linkColor}; text-decoration: none; font-size: 12px; word-break: break-all;">
+                    <a href="${link.download_url}" target="_blank" rel="noopener noreferrer" style="color: ${linkColor}; text-decoration: none; font-size: 12px; word-break: break-all;">
                         ${link.source} ${t('download')}${fileSize}
                     </a>
                 </div>
@@ -38,7 +38,7 @@ export function renderDownloadLinks(links, modelName, modelType, isInstalled) {
         } else if (link.url && link.source === "Google") {
             html += `
                 <div style="margin-bottom: 4px;">
-                    <a href="${link.url}" target="_blank" style="color: #4285f4; text-decoration: none; font-size: 12px; word-break: break-all;">
+                    <a href="${link.url}" target="_blank" rel="noopener noreferrer" style="color: #4285f4; text-decoration: none; font-size: 12px; word-break: break-all;">
                         🔍 ${link.source} ${t('search')}
                     </a>
                 </div>

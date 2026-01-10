@@ -208,18 +208,18 @@ export function extractModelsFromWorkflow(workflow) {
                                 modelNodeMap[modelKey].push(nodeId);
                                 // 调试日志：记录模型和节点的映射
                                 if (modelName.includes('1x-ITF-SkinDiffDetail-Lite-v1')) {
-                                    console.log(`[ComfyUI-find-models] 模型 ${modelName} 映射到节点 ID: ${nodeId} (类型: ${nodeType})`);
+                                    // console.log(`[ComfyUI-find-models] 模型 ${modelName} 映射到节点 ID: ${nodeId} (类型: ${nodeType})`);
                                 }
                             }
                         }
                         
                         // 调试日志（仅记录未使用的模型）
                         if (!isUsed) {
-                            console.log(`[ComfyUI-find-models] 节点 ${node.id} (${nodeType}) 模型 ${modelName} 未使用 - outputs:`, 
-                                node.outputs?.map(o => o.links?.length || 0), 
-                                `inputs:`, 
-                                node.inputs?.map(i => i.link !== undefined && i.link !== null ? '有连接' : '无连接')
-                            );
+                            // console.log(`[ComfyUI-find-models] 节点 ${node.id} (${nodeType}) 模型 ${modelName} 未使用 - outputs:`, 
+                            //     node.outputs?.map(o => o.links?.length || 0), 
+                            //     `inputs:`, 
+                            //     node.inputs?.map(i => i.link !== undefined && i.link !== null ? '有连接' : '无连接')
+                            // );
                         }
                         
                         if (modelType in models) {
@@ -385,12 +385,12 @@ export function extractModelsFromWorkflow(workflow) {
                         if (inferredType in models) {
                             if (!models[inferredType].includes(modelName)) {
                                 models[inferredType].push(modelName);
-                                console.log(`[ComfyUI-find-models] 通用检测: 在节点 ${node.id} (${nodeType}, widgets_values[${i}]) 中发现模型 ${modelName}，类型推断为: ${inferredType}`);
+                                // console.log(`[ComfyUI-find-models] 通用检测: 在节点 ${node.id} (${nodeType}, widgets_values[${i}]) 中发现模型 ${modelName}，类型推断为: ${inferredType}`);
                             }
                         } else {
                             if (!models["其他"].includes(modelName)) {
                                 models["其他"].push(modelName);
-                                console.log(`[ComfyUI-find-models] 通用检测: 在节点 ${node.id} (${nodeType}, widgets_values[${i}]) 中发现模型 ${modelName}，归类为: 其他`);
+                                // console.log(`[ComfyUI-find-models] 通用检测: 在节点 ${node.id} (${nodeType}, widgets_values[${i}]) 中发现模型 ${modelName}，归类为: 其他`);
                             }
                         }
                     }
@@ -522,7 +522,7 @@ export function checkModelStatus(requiredModels, installedModels, modelUsageMap 
         for (const model of models) {
             // 确保 model 是字符串
             if (typeof model !== "string") {
-                console.warn(`[ComfyUI-find-models] 警告: 模型名不是字符串类型:`, model);
+                // console.warn(`[ComfyUI-find-models] 警告: 模型名不是字符串类型:`, model);
                 continue;
             }
             
@@ -593,10 +593,10 @@ export function checkModelStatus(requiredModels, installedModels, modelUsageMap 
             
             // 调试日志（仅记录未使用的模型或特定模型）
             if (isUsed === false) {
-                console.log(`[ComfyUI-find-models] 模型 ${modelKey} 标记为未使用`);
+                // console.log(`[ComfyUI-find-models] 模型 ${modelKey} 标记为未使用`);
             }
             if (model.includes('1x-ITF-SkinDiffDetail-Lite-v1')) {
-                console.log(`[ComfyUI-find-models] 模型 ${modelKey} 对应的节点IDs: [${nodeIds.join(', ')}]`);
+                // console.log(`[ComfyUI-find-models] 模型 ${modelKey} 对应的节点IDs: [${nodeIds.join(', ')}]`);
             }
             
             const families = detectModelFamily(model);

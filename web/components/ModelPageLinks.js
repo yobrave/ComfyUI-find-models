@@ -46,7 +46,7 @@ export function renderModelPageLinks(links, isInstalled) {
                 const linkColor = "#64b5f6";
                 html += `
                     <div style="margin-bottom: 4px;">
-                        <a href="${link.url}" target="_blank" style="color: ${linkColor}; text-decoration: none; font-size: 12px; word-break: break-all;">
+                        <a href="${link.url}" target="_blank" rel="noopener noreferrer" style="color: ${linkColor}; text-decoration: none; font-size: 12px; word-break: break-all;">
                             ${link.source}${link.name ? `: ${link.name}` : ''}
                         </a>
                         ${link.version ? `<span style="color: #999; font-size: 11px;"> (${link.version})</span>` : ''}
@@ -68,7 +68,7 @@ export function renderModelPageLinks(links, isInstalled) {
                 const linkColor = "#64b5f6";
                 html += `
                     <div style="margin-bottom: 4px;">
-                        <a href="${link.url}" target="_blank" style="color: ${linkColor}; text-decoration: none; font-size: 12px; word-break: break-all;">
+                        <a href="${link.url}" target="_blank" rel="noopener noreferrer" style="color: ${linkColor}; text-decoration: none; font-size: 12px; word-break: break-all;">
                             ${link.source}${link.name ? `: ${link.name}` : ''}
                         </a>
                         ${link.version ? `<span style="color: #999; font-size: 11px;"> (${link.version})</span>` : ''}

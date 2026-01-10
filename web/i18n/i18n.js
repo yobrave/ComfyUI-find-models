@@ -15,7 +15,7 @@ export function getCurrentLanguage() {
             return savedLanguage;
         }
     } catch (error) {
-        console.warn('[ComfyUI-find-models] 读取语言设置失败:', error);
+        // console.warn('[ComfyUI-find-models] 读取语言设置失败:', error);
     }
     return DEFAULT_LANGUAGE;
 }
@@ -23,7 +23,7 @@ export function getCurrentLanguage() {
 // 设置语言并保存到 localStorage（不过期）
 export function setLanguage(lang) {
     if (lang !== 'en' && lang !== 'zh') {
-        console.warn(`[ComfyUI-find-models] 不支持的语言: ${lang}`);
+        // console.warn(`[ComfyUI-find-models] 不支持的语言: ${lang}`);
         return;
     }
     
@@ -32,7 +32,7 @@ export function setLanguage(lang) {
         // 触发语言变更事件，通知其他组件更新
         window.dispatchEvent(new CustomEvent('comfyui-find-models-language-changed', { detail: { language: lang } }));
     } catch (error) {
-        console.error('[ComfyUI-find-models] 保存语言设置失败:', error);
+        // console.error('[ComfyUI-find-models] 保存语言设置失败:', error);
     }
 }
 

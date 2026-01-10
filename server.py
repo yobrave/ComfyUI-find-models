@@ -17,28 +17,31 @@ from .name_matcher import normalize_name, calculate_name_similarity
 from .google_search import search_google_model
 
 # 配置日志
-logger = logging.getLogger("ComfyUI-find-models")
-logger.setLevel(logging.DEBUG)
+# logger = logging.getLogger("ComfyUI-find-models")
+# logger.setLevel(logging.DEBUG)
 
 # 如果没有处理器，添加一个
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    handler.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('[ComfyUI-find-models] %(levelname)s: %(message)s')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+# if not logger.handlers:
+#     handler = logging.StreamHandler()
+#     handler.setLevel(logging.DEBUG)
+#     formatter = logging.Formatter('[ComfyUI-find-models] %(levelname)s: %(message)s')
+#     handler.setFormatter(formatter)
+#     logger.addHandler(handler)
+logger = None  # 禁用 logger
 
-logger.info("=" * 60)
-logger.info("开始加载 ComfyUI Find Models 服务器扩展")
-logger.info("=" * 60)
+# logger.info("=" * 60)
+# logger.info("开始加载 ComfyUI Find Models 服务器扩展")
+# logger.info("=" * 60)
 
 # 检查并记录代理设置
 http_proxy = os.environ.get('HTTP_PROXY') or os.environ.get('http_proxy')
 https_proxy = os.environ.get('HTTPS_PROXY') or os.environ.get('https_proxy')
 if http_proxy or https_proxy:
-    logger.info(f"检测到代理设置 - HTTP_PROXY: {http_proxy}, HTTPS_PROXY: {https_proxy}")
+    # logger.info(f"检测到代理设置 - HTTP_PROXY: {http_proxy}, HTTPS_PROXY: {https_proxy}")
+    pass
 else:
-    logger.info("未检测到代理设置，将直接连接")
+    # logger.info("未检测到代理设置，将直接连接")
+    pass
 
 # 搜索 Civitai 模型
 async def search_civitai_model(model_name):
@@ -122,7 +125,8 @@ async def search_civitai_model(model_name):
                             # 没有找到任何匹配
                             return None
     except Exception as e:
-        logger.warning(f"Civitai 搜索错误: {e}")
+        # logger.warning(f"Civitai 搜索错误: {e}")
+        pass
     return None
 
 # 搜索 Hugging Face 模型
@@ -186,44 +190,45 @@ async def search_huggingface_model(model_name):
                             # 如果无法验证文件，返回 None（不返回没有 file_size 的结果）
                             return None
     except Exception as e:
-        logger.warning(f"Hugging Face 搜索错误: {e}")
+        # logger.warning(f"Hugging Face 搜索错误: {e}")
+        pass
     return None
 
 # search_google_model 函数已移至 google_search.py 模块
 
 # 步骤 1: 导入模块
-logger.debug("步骤 1: 导入必要的模块")
+# logger.debug("步骤 1: 导入必要的模块")
 
 # 步骤 2: 获取路由对象（ComfyUI-Manager 的标准方式）
-logger.debug("步骤 2: 获取路由对象")
+# logger.debug("步骤 2: 获取路由对象")
 try:
     # 检查 PromptServer.instance 是否已初始化
     if PromptServer.instance is None:
-        logger.error("✗ PromptServer.instance 为 None，无法注册路由")
-        logger.error("  这通常发生在模块加载时 PromptServer 尚未初始化")
-        logger.error("  请确保 ComfyUI 已完全启动")
+        # logger.error("✗ PromptServer.instance 为 None，无法注册路由")
+        # logger.error("  这通常发生在模块加载时 PromptServer 尚未初始化")
+        # logger.error("  请确保 ComfyUI 已完全启动")
         routes = None
     else:
         routes = PromptServer.instance.routes
-        logger.info(f"✓ 111取路由对象: {routes}")
-        logger.debug(f"  路由对象类型: {type(routes)}")
-        logger.debug(f"  PromptServer.instance: {PromptServer.instance}")
+        # logger.info(f"✓ 111取路由对象: {routes}")
+        # logger.debug(f"  路由对象类型: {type(routes)}")
+        # logger.debug(f"  PromptServer.instance: {PromptServer.instance}")
 except AttributeError as e:
-    logger.error(f"✗ 获取路由对象失败（AttributeError）: {e}")
-    logger.error("  可能 PromptServer.instance 尚未初始化")
+    # logger.error(f"✗ 获取路由对象失败（AttributeError）: {e}")
+    # logger.error("  可能 PromptServer.instance 尚未初始化")
     routes = None
 except Exception as e:
-    logger.error(f"✗ 获取路由对象失败: {e}")
+    # logger.error(f"✗ 获取路由对象失败: {e}")
     import traceback
-    logger.error(traceback.format_exc())
+    # logger.error(traceback.format_exc())
     routes = None
 
 # 步骤 3: 注册API路由
 if routes is not None:
-    logger.debug("步骤 3: 注册 API 路由")
+    # logger.debug("步骤 3: 注册 API 路由")
     
     # 验证路由是否已添加到路由表
-    logger.debug(f"  当前路由表数量: {len(routes._routes) if hasattr(routes, '_routes') else 'unknown'}")
+    # logger.debug(f"  当前路由表数量: {len(routes._routes) if hasattr(routes, '_routes') else 'unknown'}")
     
     # 注册版本信息 API（使用复杂路径前缀）
     @routes.get("/comfyui-find-models/api/v1/system/version")
@@ -236,10 +241,10 @@ if routes is not None:
                 "name": "ComfyUI Find Models"
             })
         except Exception as e:
-            logger.error(f"获取版本信息失败: {e}")
+            # logger.error(f"获取版本信息失败: {e}")
             return web.json_response({"version": "1.0.0", "name": "ComfyUI Find Models"}, status=200)
     
-    logger.info("✓ API 路由 GET /comfyui-find-models/api/v1/system/version 注册成功")
+    # logger.info("✓ API 路由 GET /comfyui-find-models/api/v1/system/version 注册成功")
     
     # 注册测试页面路由
     @routes.get("/comfyui-find-models/test/name-match")
@@ -254,10 +259,10 @@ if routes is not None:
             else:
                 return web.Response(text="测试页面未找到", status=404)
         except Exception as e:
-            logger.error(f"加载测试页面失败: {e}")
+            # logger.error(f"加载测试页面失败: {e}")
             return web.Response(text=f"加载测试页面失败: {e}", status=500)
     
-    logger.info("✓ API 路由 GET /comfyui-find-models/test/name-match 注册成功")
+    # logger.info("✓ API 路由 GET /comfyui-find-models/test/name-match 注册成功")
     
     # 注册名称匹配测试 API
     @routes.get("/comfyui-find-models/api/v1/test/name-match")
@@ -285,12 +290,12 @@ if routes is not None:
                 "is_match": similarity >= 0.9
             })
         except Exception as e:
-            logger.error(f"名称匹配测试失败: {e}")
+            # logger.error(f"名称匹配测试失败: {e}")
             import traceback
-            logger.error(traceback.format_exc())
+            # logger.error(traceback.format_exc())
             return web.json_response({"error": str(e)}, status=500)
     
-    logger.info("✓ API 路由 GET /comfyui-find-models/api/v1/test/name-match 注册成功")
+    # logger.info("✓ API 路由 GET /comfyui-find-models/api/v1/test/name-match 注册成功")
     
     # 注册模型搜索 API（搜索 Civitai 和 Hugging Face）
     @routes.post("/comfyui-find-models/api/v1/models/search")
@@ -352,7 +357,7 @@ if routes is not None:
                         should_search_hf = search_hf
                         should_search_google = True
                 except Exception as e:
-                    logger.warning(f"[{model_name}] Civitai 搜索失败: {e}")
+                    # logger.warning(f"[{model_name}] Civitai 搜索失败: {e}")
                     # Civitai 搜索失败时，如果原本要搜索 HF，则继续搜索
                     should_search_hf = search_hf
                     should_search_google = True
@@ -380,7 +385,7 @@ if routes is not None:
                         if not civitai_result:
                             should_search_google = True
                 except Exception as e:
-                    logger.warning(f"[{model_name}] Hugging Face 搜索失败: {e}")
+                    # logger.warning(f"[{model_name}] Hugging Face 搜索失败: {e}")
                     # 如果 Civitai 也没找到，触发 Google 搜索
                     if not civitai_result:
                         should_search_google = True
@@ -407,7 +412,7 @@ if routes is not None:
                         "note": None  # 不在结果中显示提示，会在表格顶部显示
                     })
             except Exception as e:
-                logger.warning(f"[{model_name}] Google 搜索失败: {e}")
+                # logger.warning(f"[{model_name}] Google 搜索失败: {e}")
                 # 即使搜索失败，也提供一个 Google 搜索链接
                 google_search_url = f"https://www.google.com/search?q={quote(model_name + ' (site:civitai.com/models OR site:huggingface.co OR site:github.com)')}&num=5"
                 results.append({
@@ -421,12 +426,12 @@ if routes is not None:
             return web.json_response({"results": results})
             
         except Exception as e:
-            logger.error(f"搜索模型链接失败: {e}")
+            # logger.error(f"搜索模型链接失败: {e}")
             import traceback
-            logger.error(traceback.format_exc())
+            # logger.error(traceback.format_exc())
             return web.json_response({"error": str(e)}, status=500)
     
-    logger.info("✓ API 路由 POST /comfyui-find-models/api/v1/models/search 注册成功")
+    # logger.info("✓ API 路由 POST /comfyui-find-models/api/v1/models/search 注册成功")
     
     # 注册获取 extra_model_paths 配置的 API
     @routes.get("/comfyui-find-models/api/v1/system/extra-model-paths")
@@ -553,17 +558,20 @@ if routes is not None:
                                         except:
                                             continue
                             except Exception as e2:
-                                logger.debug(f"尝试使用 get_folder_paths 方法失败: {e2}")
+                                # logger.debug(f"尝试使用 get_folder_paths 方法失败: {e2}")
+                                pass
                         
-                        logger.info(f"✓ 通过 folder_paths.folder_names_and_paths 获取路径信息: {len(extra_paths)} 个类型")
+                        # logger.info(f"✓ 通过 folder_paths.folder_names_and_paths 获取路径信息: {len(extra_paths)} 个类型")
                         if extra_paths:
-                            logger.debug(f"  路径信息: {list(extra_paths.keys())}")
-                            for mt, config in list(extra_paths.items())[:3]:  # 只显示前3个
-                                logger.debug(f"    {mt}: {config.get('default_path', 'N/A')}")
+                            # logger.debug(f"  路径信息: {list(extra_paths.keys())}")
+                            # for mt, config in list(extra_paths.items())[:3]:  # 只显示前3个
+                            #     logger.debug(f"    {mt}: {config.get('default_path', 'N/A')}")
+                            pass
             except Exception as e:
-                logger.warning(f"从 folder_paths.folder_names_and_paths 获取路径失败: {e}")
+                # logger.warning(f"从 folder_paths.folder_names_and_paths 获取路径失败: {e}")
                 import traceback
-                logger.debug(traceback.format_exc())
+                # logger.debug(traceback.format_exc())
+                pass
             
             # 方法2: 尝试直接读取 extra_model_paths.yaml 文件（作为备用）
             try:
@@ -592,7 +600,7 @@ if routes is not None:
                             import yaml
                             with open(yaml_path, 'r', encoding='utf-8') as f:
                                 yaml_config = yaml.safe_load(f) or {}
-                            logger.info(f"✓ 成功读取 extra_model_paths.yaml: {yaml_path}")
+                            # logger.info(f"✓ 成功读取 extra_model_paths.yaml: {yaml_path}")
                             
                             # 转换 YAML 格式为统一格式
                             # YAML 格式通常是: {key: {base_path: "...", checkpoints: "...", loras: "..."}}
@@ -620,17 +628,22 @@ if routes is not None:
                             if converted_yaml:
                                 yaml_config = converted_yaml
                         except ImportError:
-                            logger.warning("PyYAML 未安装，无法直接读取 YAML 文件")
+                            # logger.warning("PyYAML 未安装，无法直接读取 YAML 文件")
+                            pass
                         except Exception as e:
-                            logger.warning(f"读取 extra_model_paths.yaml 失败: {e}")
+                            # logger.warning(f"读取 extra_model_paths.yaml 失败: {e}")
                             import traceback
-                            logger.debug(traceback.format_exc())
+                            # logger.debug(traceback.format_exc())
+                            pass
                     else:
-                        logger.debug(f"未找到 extra_model_paths.yaml 文件（路径: {yaml_path}）")
+                        # logger.debug(f"未找到 extra_model_paths.yaml 文件（路径: {yaml_path}）")
+                        pass
                 except Exception as e:
-                    logger.debug(f"尝试读取 extra_model_paths.yaml 文件失败: {e}")
+                    # logger.debug(f"尝试读取 extra_model_paths.yaml 文件失败: {e}")
+                    pass
             except Exception as e:
-                logger.warning(f"读取 extra_model_paths.yaml 文件时出错: {e}")
+                # logger.warning(f"读取 extra_model_paths.yaml 文件时出错: {e}")
+                pass
             
             # 合并两种方法的结果（优先使用 folder_paths 的数据）
             merged = {}
@@ -649,39 +662,44 @@ if routes is not None:
                 "merged": merged
             }
             
-            logger.info(f"✓ 返回 extra_model_paths 配置: {len(merged)} 个模型类型")
+            # logger.info(f"✓ 返回 extra_model_paths 配置: {len(merged)} 个模型类型")
             return web.json_response(result)
             
         except Exception as e:
-            logger.error(f"获取 extra_model_paths 配置失败: {e}")
+            # logger.error(f"获取 extra_model_paths 配置失败: {e}")
             import traceback
-            logger.error(traceback.format_exc())
+            # logger.error(traceback.format_exc())
             return web.json_response({"error": str(e)}, status=500)
     
-    logger.info("✓ API 路由 GET /comfyui-find-models/api/v1/system/extra-model-paths 注册成功")
+    # logger.info("✓ API 路由 GET /comfyui-find-models/api/v1/system/extra-model-paths 注册成功")
     
     # 验证路由注册（调试信息）
     try:
         # 尝试获取路由信息
         if hasattr(routes, '_routes'):
             all_routes = list(routes._routes)
-            logger.debug(f"  路由表总数: {len(all_routes)}")
+            # logger.debug(f"  路由表总数: {len(all_routes)}")
             # 查找我们注册的路由
             our_routes = [r for r in all_routes if '/comfyui-find-models/api' in str(r.path)]
             if our_routes:
-                logger.info("✓ 验证：找到我们注册的路由:")
-                for route in our_routes:
-                    logger.info(f"    {route.method} {route.path}")
+                # logger.info("✓ 验证：找到我们注册的路由:")
+                # for route in our_routes:
+                #     logger.info(f"    {route.method} {route.path}")
+                pass
             else:
-                logger.warning("⚠ 警告：在路由表中未找到我们注册的路由")
+                # logger.warning("⚠ 警告：在路由表中未找到我们注册的路由")
+                pass
         else:
-            logger.debug("  无法访问路由表内部结构")
+            # logger.debug("  无法访问路由表内部结构")
+            pass
     except Exception as e:
-        logger.debug(f"  验证路由时出错: {e}")
+        # logger.debug(f"  验证路由时出错: {e}")
+        pass
 else:
-    logger.error("✗ 无法注册 API 路由：routes 对象为 None")
-    logger.error("  请检查 ComfyUI 控制台是否有相关错误信息")
+    # logger.error("✗ 无法注册 API 路由：routes 对象为 None")
+    # logger.error("  请检查 ComfyUI 控制台是否有相关错误信息")
+    pass
 
-logger.info("=" * 60)
-logger.info("ComfyUI Find Models 服务器扩展加载完成")
-logger.info("=" * 60)
+# logger.info("=" * 60)
+# logger.info("ComfyUI Find Models 服务器扩展加载完成")
+# logger.info("=" * 60)
