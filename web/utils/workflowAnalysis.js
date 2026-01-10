@@ -34,22 +34,31 @@ export async function analyzeCurrentWorkflow(contentDiv) {
             return;
         }
         
+        // 保存 workflow 到全局状态，供重新搜索时使用
+        if (typeof window !== 'undefined') {
+            window._currentWorkflow = workflow;
+        }
+        
         // 步骤 2: 提取工作流中的模型需求
-        const { models: requiredModels, modelUsageMap, modelNodeMap } = extractModelsFromWorkflow(workflow);
+        const { models: requiredModels, modelUsageMap, modelNodeMap, modelNodeTypeMap } = extractModelsFromWorkflow(workflow);
         const totalRequired = Object.values(requiredModels).reduce((sum, models) => sum + models.length, 0);
         
         // 步骤 3: 获取已安装的模型列表和 extra_model_paths 配置
         contentDiv.innerHTML = renderLoadingState(t('gettingInstalledModels'));
         
-        const [installedModels, extraModelPaths] = await Promise.all([
+        const [installedModelsData, extraModelPaths] = await Promise.all([
             getInstalledModels(),
             getExtraModelPaths()
         ]);
         
+        // 适配新的数据结构：getInstalledModels 现在返回 { models, nodeTypeMap }
+        const installedModels = installedModelsData.models || installedModelsData;
+        const installedNodeTypeMap = installedModelsData.nodeTypeMap || {};
+        
         const totalInstalled = Object.values(installedModels).reduce((sum, models) => sum + models.length, 0);
         
-        // 步骤 4: 检查模型状态（传入使用状态映射、节点映射和 extra_model_paths 配置）
-        const status = checkModelStatus(requiredModels, installedModels, modelUsageMap, modelNodeMap, MODEL_TYPE_TO_DIR, extraModelPaths);
+        // 步骤 4: 检查模型状态（传入使用状态映射、节点映射、节点类型映射和 extra_model_paths 配置）
+        const status = checkModelStatus(requiredModels, installedModels, modelUsageMap, modelNodeMap, MODEL_TYPE_TO_DIR, extraModelPaths, modelNodeTypeMap, installedNodeTypeMap);
         
         // 步骤 5: 先显示表格框架（所有模型，缺失的显示加载状态）
         const modelLinks = {};
@@ -137,7 +146,8 @@ export async function analyzeCurrentWorkflow(contentDiv) {
             by_type: groupByType(status.modelInfo),
             required_models: requiredModels,
             installed_models: installedModels,
-            extra_model_paths: extraModelPaths // 保存 extraModelPaths 用于显示路径
+            extra_model_paths: extraModelPaths, // 保存 extraModelPaths 用于显示路径
+            installed_node_type_map: installedNodeTypeMap // 保存已安装模型的节点类型映射
         };
         
         // 步骤 8: 最终显示结果（更新表格，按使用状态分组，并保存结果）

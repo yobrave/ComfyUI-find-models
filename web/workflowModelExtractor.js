@@ -159,9 +159,11 @@ export function extractModelsFromWorkflow(workflow) {
     const modelUsageMap = {};
     // 存储每个模型对应的节点ID列表（key: "modelType:modelName", value: [nodeId1, nodeId2, ...]）
     const modelNodeMap = {};
+    // 存储每个模型对应的节点类型列表（key: "modelType:modelName", value: [nodeType1, nodeType2, ...]）
+    const modelNodeTypeMap = {};
     
     if (!workflow || !workflow.nodes) {
-        return { models, modelUsageMap, modelNodeMap };
+        return { models, modelUsageMap, modelNodeMap, modelNodeTypeMap };
     }
     
     // 使用 widgets_values 提取模型（与 get_workflow_models.py 一致）
@@ -211,6 +213,14 @@ export function extractModelsFromWorkflow(workflow) {
                                     // console.log(`[ComfyUI-find-models] 模型 ${modelName} 映射到节点 ID: ${nodeId} (类型: ${nodeType})`);
                                 }
                             }
+                        }
+                        
+                        // 保存节点类型到模型映射
+                        if (!modelNodeTypeMap[modelKey]) {
+                            modelNodeTypeMap[modelKey] = [];
+                        }
+                        if (!modelNodeTypeMap[modelKey].includes(nodeType)) {
+                            modelNodeTypeMap[modelKey].push(nodeType);
                         }
                         
                         // 调试日志（仅记录未使用的模型）
@@ -381,6 +391,14 @@ export function extractModelsFromWorkflow(workflow) {
                             }
                         }
                         
+                        // 保存节点类型到模型映射
+                        if (!modelNodeTypeMap[modelKey]) {
+                            modelNodeTypeMap[modelKey] = [];
+                        }
+                        if (!modelNodeTypeMap[modelKey].includes(nodeType)) {
+                            modelNodeTypeMap[modelKey].push(nodeType);
+                        }
+                        
                         // 添加到模型列表
                         if (inferredType in models) {
                             if (!models[inferredType].includes(modelName)) {
@@ -399,7 +417,7 @@ export function extractModelsFromWorkflow(workflow) {
         }
     }
     
-    return { models, modelUsageMap, modelNodeMap };
+    return { models, modelUsageMap, modelNodeMap, modelNodeTypeMap };
 }
 
 // 模型类型到目录的映射
@@ -511,13 +529,17 @@ export function buildLocalPath(modelType, modelName, modelTypeToDir, extraModelP
 }
 
 // 检查模型状态
-export function checkModelStatus(requiredModels, installedModels, modelUsageMap = {}, modelNodeMap = {}, modelTypeToDir = MODEL_TYPE_TO_DIR, extraModelPaths = null) {
+export function checkModelStatus(requiredModels, installedModels, modelUsageMap = {}, modelNodeMap = {}, modelTypeToDir = MODEL_TYPE_TO_DIR, extraModelPaths = null, modelNodeTypeMap = {}, installedNodeTypeMap = {}) {
     const installed = [];
     const missing = [];
     const modelInfo = {};
     
+    // 如果 installedModels 是对象且包含 models 属性，说明是新格式，需要提取
+    const installedModelsData = installedModels.models || installedModels;
+    const installedNodeTypes = installedNodeTypeMap || {};
+    
     for (const [modelType, models] of Object.entries(requiredModels)) {
-        const installedList = installedModels[modelType] || [];
+        const installedList = installedModelsData[modelType] || [];
         
         for (const model of models) {
             // 确保 model 是字符串
@@ -533,6 +555,12 @@ export function checkModelStatus(requiredModels, installedModels, modelUsageMap 
             let isInstalled = false;
             let matchedName = null;
             let localPath = null;
+            let nodeTypeMatched = false; // 节点类型是否匹配
+            let installedModelNodeTypes = []; // 已安装模型的节点类型列表（用于最后的判断）
+            
+            // 获取 workflow 中需要此模型的节点类型列表
+            const modelKey = `${modelType}:${model}`;
+            const requiredNodeTypes = modelNodeTypeMap[modelKey] || [];
             
             for (const installedModel of installedList) {
                 // 确保 installedModel 是字符串
@@ -548,6 +576,21 @@ export function checkModelStatus(requiredModels, installedModels, modelUsageMap 
                         
                         // 优先精确匹配文件名
                         if (singleModelFileName === modelFileName || singleModelLower === modelLower) {
+                            // 检查节点类型是否匹配
+                            const installedModelKey = `${modelType}:${singleModelName}`;
+                            installedModelNodeTypes = installedNodeTypes[installedModelKey] || [];
+                            
+                            // 验证节点类型是否一致（如果 workflow 中有节点类型要求）
+                            if (requiredNodeTypes.length > 0 && installedModelNodeTypes.length > 0) {
+                                // 检查是否有交集（即是否至少有一个节点类型匹配）
+                                nodeTypeMatched = requiredNodeTypes.some(reqType => 
+                                    installedModelNodeTypes.some(instType => reqType === instType)
+                                );
+                            } else {
+                                // 如果没有节点类型信息，则认为匹配（向后兼容）
+                                nodeTypeMatched = true;
+                            }
+                            
                             isInstalled = true;
                             matchedName = singleModelName;
                             localPath = buildLocalPath(modelType, singleModelName, modelTypeToDir, extraModelPaths);
@@ -555,6 +598,18 @@ export function checkModelStatus(requiredModels, installedModels, modelUsageMap 
                         }
                         // 其次尝试文件名包含匹配（但要求文件名部分匹配）
                         else if (singleModelFileName.includes(modelFileName) || modelFileName.includes(singleModelFileName)) {
+                            // 检查节点类型是否匹配
+                            const installedModelKey = `${modelType}:${singleModelName}`;
+                            installedModelNodeTypes = installedNodeTypes[installedModelKey] || [];
+                            
+                            if (requiredNodeTypes.length > 0 && installedModelNodeTypes.length > 0) {
+                                nodeTypeMatched = requiredNodeTypes.some(reqType => 
+                                    installedModelNodeTypes.some(instType => reqType === instType)
+                                );
+                            } else {
+                                nodeTypeMatched = true;
+                            }
+                            
                             isInstalled = true;
                             matchedName = singleModelName;
                             localPath = buildLocalPath(modelType, singleModelName, modelTypeToDir, extraModelPaths);
@@ -569,6 +624,18 @@ export function checkModelStatus(requiredModels, installedModels, modelUsageMap 
                     
                     // 优先精确匹配文件名
                     if (installedFileName === modelFileName || installedLower === modelLower) {
+                        // 检查节点类型是否匹配
+                        const installedModelKey = `${modelType}:${installedModelStr}`;
+                        installedModelNodeTypes = installedNodeTypes[installedModelKey] || [];
+                        
+                        if (requiredNodeTypes.length > 0 && installedModelNodeTypes.length > 0) {
+                            nodeTypeMatched = requiredNodeTypes.some(reqType => 
+                                installedModelNodeTypes.some(instType => reqType === instType)
+                            );
+                        } else {
+                            nodeTypeMatched = true;
+                        }
+                        
                         isInstalled = true;
                         matchedName = installedModelStr;
                         localPath = buildLocalPath(modelType, installedModelStr, modelTypeToDir, extraModelPaths);
@@ -576,6 +643,18 @@ export function checkModelStatus(requiredModels, installedModels, modelUsageMap 
                     }
                     // 其次尝试文件名包含匹配（但要求文件名部分匹配）
                     else if (installedFileName.includes(modelFileName) || modelFileName.includes(installedFileName)) {
+                        // 检查节点类型是否匹配
+                        const installedModelKey = `${modelType}:${installedModelStr}`;
+                        installedModelNodeTypes = installedNodeTypes[installedModelKey] || [];
+                        
+                        if (requiredNodeTypes.length > 0 && installedModelNodeTypes.length > 0) {
+                            nodeTypeMatched = requiredNodeTypes.some(reqType => 
+                                installedModelNodeTypes.some(instType => reqType === instType)
+                            );
+                        } else {
+                            nodeTypeMatched = true;
+                        }
+                        
                         isInstalled = true;
                         matchedName = installedModelStr;
                         localPath = buildLocalPath(modelType, installedModelStr, modelTypeToDir, extraModelPaths);
@@ -584,12 +663,29 @@ export function checkModelStatus(requiredModels, installedModels, modelUsageMap 
                 }
             }
             
+            // 节点类型验证：如果模型名匹配，就认为已安装
+            // 节点类型不匹配只作为信息记录，不阻止匹配（因为同一个模型可能被多个节点类型使用）
+            // 如果节点类型信息有一方为空，则认为匹配（向后兼容）
+            if (isInstalled && !nodeTypeMatched) {
+                // 如果 workflow 中没有节点类型信息，或者已安装模型中没有节点类型信息，认为匹配（向后兼容）
+                if (requiredNodeTypes.length === 0 || installedModelNodeTypes.length === 0) {
+                    nodeTypeMatched = true;
+                } else {
+                    // 节点类型信息完整但不匹配，仍然认为已安装（因为模型存在且名称匹配）
+                    // 节点类型不匹配只是说明可能需要不同的节点类型，但不影响模型已安装的事实
+                    // console.log(`[ComfyUI-find-models] 模型 ${modelKey} 节点类型不匹配: workflow需要 [${requiredNodeTypes.join(', ')}], 已安装模型支持 [${installedModelNodeTypes.join(', ')}]，但模型存在，仍视为已安装`);
+                    nodeTypeMatched = true; // 允许匹配，因为模型确实存在
+                }
+            }
+            
             // 获取模型的使用状态
-            const modelKey = `${modelType}:${model}`;
             const isUsed = modelUsageMap[modelKey] !== undefined ? modelUsageMap[modelKey] : true; // 默认为 true（已使用）
             
             // 获取模型对应的节点ID列表
             const nodeIds = modelNodeMap[modelKey] || [];
+            
+            // 获取模型对应的节点类型列表
+            const nodeTypes = requiredNodeTypes || [];
             
             // 调试日志（仅记录未使用的模型或特定模型）
             if (isUsed === false) {
@@ -608,7 +704,9 @@ export function checkModelStatus(requiredModels, installedModels, modelUsageMap 
                 localPath: localPath,
                 families: families,
                 isUsed: isUsed,  // 添加使用状态
-                nodeIds: nodeIds  // 添加节点ID列表
+                nodeIds: nodeIds,  // 添加节点ID列表
+                nodeTypes: nodeTypes,  // 添加节点类型列表
+                nodeTypeMatched: nodeTypeMatched  // 添加节点类型匹配状态
             };
             
             modelInfo[`${modelType}:${model}`] = info;

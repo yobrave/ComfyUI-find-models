@@ -52,6 +52,9 @@ export async function getInstalledModels() {
             "其他": []
         };
         
+        // 存储每个模型对应的节点类型（key: "modelType:modelName", value: [nodeType1, nodeType2, ...]）
+        const installedModelNodeTypeMap = {};
+        
         // 辅助函数：确保值是字符串数组
         function ensureStringArray(arr) {
             if (!Array.isArray(arr)) {
@@ -69,40 +72,93 @@ export async function getInstalledModels() {
             }).filter(item => item && typeof item === "string");
         }
         
+        // 辅助函数：记录模型和节点类型的映射
+        function recordModelNodeType(modelType, modelName, nodeType) {
+            const modelKey = `${modelType}:${modelName}`;
+            if (!installedModelNodeTypeMap[modelKey]) {
+                installedModelNodeTypeMap[modelKey] = [];
+            }
+            if (!installedModelNodeTypeMap[modelKey].includes(nodeType)) {
+                installedModelNodeTypeMap[modelKey].push(nodeType);
+            }
+        }
+        
         // 从 object_info 中提取模型列表
         // ComfyUI 的 object_info 包含各种节点的输入信息，包括模型选择器
         if (objectInfo.CheckpointLoaderSimple && objectInfo.CheckpointLoaderSimple.input) {
             const required = objectInfo.CheckpointLoaderSimple.input.required || {};
             if (required.ckpt_name) {
-                installed["主模型"] = ensureStringArray(required.ckpt_name);
+                const models = ensureStringArray(required.ckpt_name);
+                installed["主模型"] = models;
+                models.forEach(modelName => {
+                    recordModelNodeType("主模型", modelName, "CheckpointLoaderSimple");
+                });
             }
         }
         
         if (objectInfo.VAELoader && objectInfo.VAELoader.input) {
             const required = objectInfo.VAELoader.input.required || {};
             if (required.vae_name) {
-                installed["VAE"] = ensureStringArray(required.vae_name);
+                const models = ensureStringArray(required.vae_name);
+                installed["VAE"] = models;
+                models.forEach(modelName => {
+                    recordModelNodeType("VAE", modelName, "VAELoader");
+                });
             }
         }
         
         if (objectInfo.CLIPLoader && objectInfo.CLIPLoader.input) {
             const required = objectInfo.CLIPLoader.input.required || {};
             if (required.clip_name) {
-                installed["CLIP"] = ensureStringArray(required.clip_name);
+                const models = ensureStringArray(required.clip_name);
+                installed["CLIP"] = models;
+                models.forEach(modelName => {
+                    recordModelNodeType("CLIP", modelName, "CLIPLoader");
+                });
             }
         }
         
         if (objectInfo.ControlNetLoader && objectInfo.ControlNetLoader.input) {
             const required = objectInfo.ControlNetLoader.input.required || {};
             if (required.control_net_name) {
-                installed["ControlNet"] = ensureStringArray(required.control_net_name);
+                const models = ensureStringArray(required.control_net_name);
+                installed["ControlNet"] = models;
+                models.forEach(modelName => {
+                    recordModelNodeType("ControlNet", modelName, "ControlNetLoader");
+                });
             }
         }
         
         if (objectInfo.LoraLoader && objectInfo.LoraLoader.input) {
             const required = objectInfo.LoraLoader.input.required || {};
             if (required.lora_name) {
-                installed["LoRA"] = ensureStringArray(required.lora_name);
+                const models = ensureStringArray(required.lora_name);
+                installed["LoRA"] = models;
+                models.forEach(modelName => {
+                    recordModelNodeType("LoRA", modelName, "LoraLoader");
+                });
+            }
+        }
+        
+        if (objectInfo.UpscaleModelLoader && objectInfo.UpscaleModelLoader.input) {
+            const required = objectInfo.UpscaleModelLoader.input.required || {};
+            if (required.model_name) {
+                const models = ensureStringArray(required.model_name);
+                installed["放大模型"] = [...new Set([...installed["放大模型"], ...models])];
+                models.forEach(modelName => {
+                    recordModelNodeType("放大模型", modelName, "UpscaleModelLoader");
+                });
+            }
+        }
+        
+        if (objectInfo.UpscalerLoader && objectInfo.UpscalerLoader.input) {
+            const required = objectInfo.UpscalerLoader.input.required || {};
+            if (required.model_name) {
+                const models = ensureStringArray(required.model_name);
+                installed["放大模型"] = [...new Set([...installed["放大模型"], ...models])];
+                models.forEach(modelName => {
+                    recordModelNodeType("放大模型", modelName, "UpscalerLoader");
+                });
             }
         }
         
@@ -153,26 +209,42 @@ export async function getInstalledModels() {
                         const modelStrings = extractModelStrings(value);
                         if (modelStrings.length > 0) {
                             // 根据字段名和节点类型分类
+                            let modelType = null;
                             if (field.includes("lora") || nodeType.includes("Lora")) {
+                                modelType = "LoRA";
                                 installed["LoRA"] = [...new Set([...installed["LoRA"], ...modelStrings])];
                             } else if (field.includes("vae") || nodeType.includes("VAE")) {
+                                modelType = "VAE";
                                 installed["VAE"] = [...new Set([...installed["VAE"], ...modelStrings])];
                             } else if (field.includes("clip") && !field.includes("vision")) {
+                                modelType = "CLIP";
                                 installed["CLIP"] = [...new Set([...installed["CLIP"], ...modelStrings])];
                             } else if (field.includes("control") || nodeType.includes("Control")) {
+                                modelType = "ControlNet";
                                 installed["ControlNet"] = [...new Set([...installed["ControlNet"], ...modelStrings])];
                             } else if (field.includes("checkpoint") || field.includes("ckpt") || nodeType.includes("Checkpoint")) {
+                                modelType = "主模型";
                                 installed["主模型"] = [...new Set([...installed["主模型"], ...modelStrings])];
                             } else if (field.includes("upscale") || field.includes("pixel") || nodeType.includes("Upscale")) {
+                                modelType = "放大模型";
                                 installed["放大模型"] = [...new Set([...installed["放大模型"], ...modelStrings])];
                             } else {
                                 // 其他包含模型后缀的字段，根据后缀或节点类型判断
                                 const hasSafetensors = modelStrings.some(s => s.toLowerCase().endsWith(".safetensors") || s.toLowerCase().endsWith(".ckpt"));
                                 if (hasSafetensors && (nodeType.includes("Checkpoint") || field.includes("checkpoint") || field.includes("ckpt"))) {
+                                    modelType = "主模型";
                                     installed["主模型"] = [...new Set([...installed["主模型"], ...modelStrings])];
                                 } else {
+                                    modelType = "其他";
                                     installed["其他"] = [...new Set([...installed["其他"], ...modelStrings])];
                                 }
+                            }
+                            
+                            // 记录模型和节点类型的映射
+                            if (modelType) {
+                                modelStrings.forEach(modelName => {
+                                    recordModelNodeType(modelType, modelName, nodeType);
+                                });
                             }
                         }
                     }
@@ -180,20 +252,23 @@ export async function getInstalledModels() {
             }
         }
         
-        return installed;
+        return { models: installed, nodeTypeMap: installedModelNodeTypeMap };
     } catch (error) {
         // console.error("[ComfyUI-find-models] 获取已安装模型列表失败:", error);
         return {
-            "主模型": [],
-            "VAE": [],
-            "文本编码器": [],
-            "CLIP": [],
-            "CLIP Vision": [],
-            "ControlNet": [],
-            "IP-Adapter": [],
-            "LoRA": [],
-            "放大模型": [],
-            "其他": []
+            models: {
+                "主模型": [],
+                "VAE": [],
+                "文本编码器": [],
+                "CLIP": [],
+                "CLIP Vision": [],
+                "ControlNet": [],
+                "IP-Adapter": [],
+                "LoRA": [],
+                "放大模型": [],
+                "其他": []
+            },
+            nodeTypeMap: {}
         };
     }
 }

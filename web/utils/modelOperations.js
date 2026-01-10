@@ -8,9 +8,10 @@ import { renderDownloadLinks } from '../components/DownloadLinks.js';
 import { renderSpinner, ensureSpinnerStyle } from '../components/Spinner.js';
 import { getInstalledModels, getExtraModelPaths, searchModelLinks } from './api.js';
 import { clearModelCache, getCachedResults, setCachedResults } from './cache.js';
-import { checkModelStatus, MODEL_TYPE_TO_DIR, buildLocalPath } from '../workflowModelExtractor.js';
+import { checkModelStatus, MODEL_TYPE_TO_DIR, buildLocalPath, extractModelsFromWorkflow } from '../workflowModelExtractor.js';
 import { t } from '../i18n/i18n.js';
 import { bindHighlightButtons } from './nodeHighlight.js';
+import { app } from '../../../scripts/app.js';
 
 // 重新搜索单个模型并更新表格行
 export async function refreshModelSearch(modelName, modelType, rowElement) {
@@ -41,16 +42,48 @@ export async function refreshModelSearch(modelName, modelType, rowElement) {
     
     try {
         // 1. 重新获取已安装模型列表和 extra_model_paths 配置
-        const [installedModels, extraModelPaths] = await Promise.all([
+        const [installedModelsData, extraModelPaths] = await Promise.all([
             getInstalledModels(),
             getExtraModelPaths()
         ]);
         
-        // 2. 重新检查模型状态
+        // 适配新的数据结构：getInstalledModels 现在返回 { models, nodeTypeMap }
+        const installedModels = installedModelsData.models || installedModelsData;
+        const installedNodeTypeMap = installedModelsData.nodeTypeMap || {};
+        
+        // 2. 重新提取 workflow 中的模型需求（获取节点类型映射）
+        let modelUsageMap = {};
+        let modelNodeMap = {};
+        let modelNodeTypeMap = {};
+        
+        try {
+            // 从全局状态获取 workflow（如果存在）
+            const workflow = window._currentWorkflow || (app?.graph ? app.graph.serialize() : null);
+            if (workflow && workflow.nodes) {
+                const extracted = extractModelsFromWorkflow(workflow);
+                modelUsageMap = extracted.modelUsageMap || {};
+                modelNodeMap = extracted.modelNodeMap || {};
+                modelNodeTypeMap = extracted.modelNodeTypeMap || {};
+            }
+        } catch (error) {
+            // 如果无法获取 workflow，使用空对象（向后兼容）
+            // console.warn("[ComfyUI-find-models] 无法获取 workflow 信息:", error);
+        }
+        
+        // 3. 重新检查模型状态（使用与第一次搜索相同的逻辑）
         const requiredModels = {
             [modelType]: [modelName]
         };
-        const status = checkModelStatus(requiredModels, installedModels, {}, {}, MODEL_TYPE_TO_DIR, extraModelPaths);
+        const status = checkModelStatus(
+            requiredModels, 
+            installedModels, 
+            modelUsageMap, 
+            modelNodeMap, 
+            MODEL_TYPE_TO_DIR, 
+            extraModelPaths,
+            modelNodeTypeMap,
+            installedNodeTypeMap
+        );
         
         // 查找模型信息（checkModelStatus 使用的键格式是 "modelType:modelName"）
         const modelInfoKey = `${modelType}:${modelName}`;
