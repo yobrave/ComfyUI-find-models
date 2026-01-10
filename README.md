@@ -1,6 +1,6 @@
 # ComfyUI Find Models
 
-This tool detects the models required by your workflow in the ComfyUI interface and provides similar download results from civitai.com/models and huggingface.co, or Google search results.
+This tool detects the models required by your workflow in the ComfyUI interface and provides similar download results from civitai.com/models and huggingface.co, or Google search results（Manual open new window tab）.
 
 **Current Version: v1.0.0**
 
