@@ -1,0 +1,2 @@
+# ComfyUI Find Models 依赖
+# 通常不需要额外依赖，使用 ComfyUI 自带的库即可

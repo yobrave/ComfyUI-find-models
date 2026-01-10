@@ -1,0 +1,17 @@
+[project]
+name = "comfyui-find-models"
+description = "ComfyUI Find Models - 在ComfyUI界面中查找和管理工作流所需的模型，显示模型状态和派系信息"
+version = "1.0.0"
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/your-username/ComfyUI-find-models"
+Documentation = "https://github.com/your-username/ComfyUI-find-models#readme"
+
+[tool.comfy]
+PublisherId = "find-models"
+DisplayName = "ComfyUI Find Models"
+Icon = ""
