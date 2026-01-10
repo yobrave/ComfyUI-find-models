@@ -2,7 +2,12 @@
  * 加载状态组件
  */
 
-export function renderLoadingState(message = "正在分析工作流...") {
+import { t } from '../i18n/i18n.js';
+
+export function renderLoadingState(message = null) {
+    if (!message) {
+        message = t('analyzingWorkflow');
+    }
     return `
         <div style="text-align: center; padding: 40px; color: #999; width: 100%; box-sizing: border-box;">
             <p>${message}</p>
@@ -11,11 +16,12 @@ export function renderLoadingState(message = "正在分析工作流...") {
 }
 
 export function renderSearchProgress(current, total, cachedCount = 0, modelName = "") {
+    const cachedText = cachedCount > 0 ? `<p style="font-size: 11px; margin-top: 5px; color: #666;">${t('usingCache', { count: cachedCount })}</p>` : '';
     return `
         <div style="text-align: center; padding: 40px; color: #999; width: 100%; box-sizing: border-box;">
-            <p>正在搜索缺失模型的下载链接...</p>
+            <p>${t('searchingForMissingModels')}</p>
             <p style="font-size: 12px; margin-top: 10px;">${current}/${total}: ${modelName}</p>
-            ${cachedCount > 0 ? `<p style="font-size: 11px; margin-top: 5px; color: #666;">已使用缓存: ${cachedCount} 个</p>` : ''}
+            ${cachedText}
         </div>
     `;
 }
@@ -23,11 +29,11 @@ export function renderSearchProgress(current, total, cachedCount = 0, modelName 
 export function renderErrorState(errorMessage) {
     return `
         <div style="color: #f44336; padding: 20px; width: 100%; box-sizing: border-box;">
-            <p><strong>错误:</strong> ${errorMessage}</p>
-            <p style="margin-top: 10px;">请确保：</p>
+            <p><strong>${t('error', { default: 'Error' })}:</strong> ${errorMessage}</p>
+            <p style="margin-top: 10px;">${t('pleaseEnsure', { default: 'Please ensure:' })}</p>
             <ul>
-                <li>工作流已加载</li>
-                <li>ComfyUI服务器正在运行</li>
+                <li>${t('workflowLoaded', { default: 'Workflow is loaded' })}</li>
+                <li>${t('serverRunning', { default: 'ComfyUI server is running' })}</li>
             </ul>
         </div>
     `;
@@ -36,8 +42,8 @@ export function renderErrorState(errorMessage) {
 export function renderNoWorkflowState() {
     return `
         <div style="color: #ff9800; padding: 20px; text-align: center; width: 100%; box-sizing: border-box;">
-            <p>⚠️ 当前没有加载工作流</p>
-            <p>请先加载一个工作流文件</p>
+            <p>⚠️ ${t('noWorkflowLoaded', { default: 'No workflow is currently loaded' })}</p>
+            <p>${t('pleaseLoadWorkflow', { default: 'Please load a workflow file first' })}</p>
         </div>
     `;
 }

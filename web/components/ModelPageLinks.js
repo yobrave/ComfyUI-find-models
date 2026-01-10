@@ -3,11 +3,12 @@
  */
 
 import { filterLinksBySize, filterNonExactMatches } from './LinkFilter.js';
+import { t } from '../i18n/i18n.js';
 
 export function renderModelPageLinks(links, isInstalled) {
     if (links.length === 0) {
         if (!isInstalled) {
-            return `<span style="color: #666; font-size: 12px;">未找到</span>`;
+            return `<span style="color: #666; font-size: 12px;">${t('notFound')}</span>`;
         } else {
             return `<span style="color: #666; font-size: 12px;">-</span>`;
         }
@@ -29,7 +30,7 @@ export function renderModelPageLinks(links, isInstalled) {
         linksBySource[source].push(link);
     }
     
-    // 按类型顺序显示
+    // 按类型顺序显示（保持原始字符串，因为用于匹配键值）
     const sourceOrder = ["Civitai", "Hugging Face", "Google → Civitai", "Google → Hugging Face", "Google → GitHub", "Google", "其他"];
     let isFirstGroup = true;
     let html = '';
@@ -77,5 +78,5 @@ export function renderModelPageLinks(links, isInstalled) {
         }
     }
     
-    return html || (isInstalled ? `<span style="color: #666; font-size: 12px;">-</span>` : `<span style="color: #666; font-size: 12px;">未找到</span>`);
+    return html || (isInstalled ? `<span style="color: #666; font-size: 12px;">-</span>` : `<span style="color: #666; font-size: 12px;">${t('notFound')}</span>`);
 }

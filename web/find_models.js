@@ -21,6 +21,7 @@ import {
     checkModelStatus,
     buildLocalPath
 } from "./workflowModelExtractor.js";
+import { t, getCurrentLanguage } from "./i18n/i18n.js";
 
 // 版本号
 let VERSION = "1.0.0";
@@ -205,23 +206,49 @@ function groupByType(modelInfo) {
     return byType;
 }
 
+// 保存当前对话框的结果，用于语言切换时重新渲染
+let _currentDialogResult = null;
+let _currentDialogContent = null;
+
 // 显示查找模型对话框
 function showFindModelsDialog() {
     // 使用组件创建对话框
     const { modal, content } = createDialog(VERSION);
+    _currentDialogContent = content;
+    _currentDialogResult = null; // 重置结果
     
     // 点击背景关闭
     modal.onclick = (e) => {
         if (e.target === modal) {
             modal.remove();
+            _currentDialogContent = null;
+            _currentDialogResult = null;
         }
     };
     
     // 初始加载状态
-    content.innerHTML = renderLoadingState("正在分析工作流...");
+    content.innerHTML = renderLoadingState(t('analyzingWorkflow'));
     
     // 获取当前工作流并分析
     analyzeCurrentWorkflow(content);
+    
+    // 监听语言变更事件，重新渲染内容
+    const languageChangeHandler = () => {
+        // 如果内容已加载，重新渲染整个内容（包括统计卡片、表格等）
+        if (_currentDialogContent && _currentDialogResult) {
+            displayModelStatus(_currentDialogContent, _currentDialogResult);
+        }
+    };
+    window.addEventListener('comfyui-find-models-language-changed', languageChangeHandler);
+    
+    // 当对话框关闭时，移除事件监听器
+    const originalRemove = modal.remove.bind(modal);
+    modal.remove = function() {
+        window.removeEventListener('comfyui-find-models-language-changed', languageChangeHandler);
+        _currentDialogContent = null;
+        _currentDialogResult = null;
+        originalRemove();
+    };
 }
 
 // 缓存管理函数
@@ -464,7 +491,7 @@ async function refreshModelSearch(modelName, modelType, rowElement) {
         
         // 3. 更新"是否已安装"单元格
         const statusColor = modelInfo.installed ? "#81c784" : "#e57373";
-        const statusText = modelInfo.installed ? "✓ 已安装" : "✗ 缺失";
+        const statusText = modelInfo.installed ? `✓ ${t('installed')}` : `✗ ${t('missing')}`;
         statusCell.innerHTML = `<span style="color: ${statusColor}; font-weight: bold;">${statusText}</span>`;
         
         // 4. 更新"本地目录"单元格
@@ -562,7 +589,7 @@ async function analyzeCurrentWorkflow(contentDiv) {
         console.log(`[ComfyUI-find-models] 提取到 ${totalRequired} 个模型需求`);
         
         // 步骤 3: 获取已安装的模型列表和 extra_model_paths 配置
-        contentDiv.innerHTML = renderLoadingState("正在获取已安装的模型列表...");
+        contentDiv.innerHTML = renderLoadingState(t('gettingInstalledModels'));
         
         const [installedModels, extraModelPaths] = await Promise.all([
             getInstalledModels(),
@@ -678,11 +705,11 @@ async function analyzeCurrentWorkflow(contentDiv) {
 }
 
 // 渲染分隔行（用于区分已使用和未使用的模型）
-function renderSeparatorRow(message) {
+function renderSeparatorRow() {
     return `
         <tr class="model-separator-row" style="background: #2d2d2d; border-top: 2px solid #555; border-bottom: 2px solid #555;">
             <td colspan="5" style="padding: 16px; text-align: center; color: #999; font-size: 13px; font-style: italic;">
-                ${message}
+                ${t('unusedModelsSeparator')}
             </td>
         </tr>
     `;
@@ -690,6 +717,9 @@ function renderSeparatorRow(message) {
 
 // 显示模型状态（表格形式）
 function displayModelStatus(contentDiv, result) {
+    // 保存当前结果，用于语言切换时重新渲染
+    _currentDialogResult = result;
+    
     // 确保加载动画样式已添加
     ensureSpinnerStyle();
     
@@ -741,7 +771,7 @@ function displayModelStatus(contentDiv, result) {
     
     // 如果有未使用的模型，添加分隔行
     if (unusedModels.length > 0) {
-        html += renderSeparatorRow("下方模型没有被使用或是节点被禁用，但出现在工作流程文件中");
+        html += renderSeparatorRow();
         
         // 显示未使用的模型
         for (const model of unusedModels) {
@@ -1265,7 +1295,7 @@ function addFindModelsButton() {
     // 创建按钮
     const button = document.createElement("button");
     button.id = "find-models-button";
-    button.textContent = "🔍 查找模型";
+    button.textContent = "🔍 find-models";
     button.className = "comfy-menu-button";
     button.style.cssText = `
         margin-left: 10px;

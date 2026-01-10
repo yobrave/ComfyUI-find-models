@@ -4,11 +4,12 @@
 
 import { filterLinksBySize, filterNonExactMatches } from './LinkFilter.js';
 import { renderRefreshButton } from './RefreshButton.js';
+import { t } from '../i18n/i18n.js';
 
 export function renderDownloadLinks(links, modelName, modelType, isInstalled) {
     if (links.length === 0) {
         if (!isInstalled) {
-            return `<span style="color: #666; font-size: 12px;">未找到</span>`;
+            return `<span style="color: #666; font-size: 12px;">${t('notFound')}</span>`;
         } else {
             return `<span style="color: #666; font-size: 12px;">-</span>`;
         }
@@ -30,7 +31,7 @@ export function renderDownloadLinks(links, modelName, modelType, isInstalled) {
             html += `
                 <div style="margin-bottom: 4px;">
                     <a href="${link.download_url}" target="_blank" style="color: ${linkColor}; text-decoration: none; font-size: 12px; word-break: break-all;">
-                        ${link.source} 下载${fileSize}
+                        ${link.source} ${t('download')}${fileSize}
                     </a>
                 </div>
             `;
@@ -38,7 +39,7 @@ export function renderDownloadLinks(links, modelName, modelType, isInstalled) {
             html += `
                 <div style="margin-bottom: 4px;">
                     <a href="${link.url}" target="_blank" style="color: #4285f4; text-decoration: none; font-size: 12px; word-break: break-all;">
-                        🔍 ${link.source} 搜索
+                        🔍 ${link.source} ${t('search')}
                     </a>
                 </div>
             `;
@@ -50,5 +51,5 @@ export function renderDownloadLinks(links, modelName, modelType, isInstalled) {
         html += renderRefreshButton(modelName, modelType);
     }
     
-    return html || (isInstalled ? `<span style="color: #666; font-size: 12px;">-</span>` : `<span style="color: #666; font-size: 12px;">未找到</span>`);
+    return html || (isInstalled ? `<span style="color: #666; font-size: 12px;">-</span>` : `<span style="color: #666; font-size: 12px;">${t('notFound')}</span>`);
 }

@@ -2,6 +2,8 @@
  * 刷新按钮组件
  */
 
+import { t } from '../i18n/i18n.js';
+
 export function renderRefreshButton(modelName, modelType) {
     return `
         <div style="margin-top: 8px;">
@@ -15,7 +17,7 @@ export function renderRefreshButton(modelName, modelType) {
                 cursor: pointer;
                 transition: all 0.2s;
             " onmouseover="this.style.background='#3d3d3d'" onmouseout="this.style.background='#2d2d2d'">
-                🔄 清除缓存并重新搜索
+                ${t('clearCacheAndRefresh')}
             </button>
         </div>
     `;
