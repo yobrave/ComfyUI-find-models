@@ -29,7 +29,7 @@ export const translations = {
         clear: "Clear",
         modelName: "Model Name",
         installedStatus: "Installation Status",
-        localPath: "Local Path",
+        localPath: "Local Directory (For Reference Only, Uncertain Path)",
         modelPage: "Model Page",
         downloadLinks: "Download Links",
         
@@ -106,7 +106,7 @@ export const translations = {
         clear: "清除",
         modelName: "模型名",
         installedStatus: "是否已安装",
-        localPath: "本地目录",
+        localPath: "本地目录（只做参考，薛定谔路径）",
         modelPage: "模型页面",
         downloadLinks: "下载链接",
         
