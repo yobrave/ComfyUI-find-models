@@ -8,10 +8,10 @@ requires-python = ">=3.8"
 dependencies = []
 
 [project.urls]
-Repository = "https://github.com/your-username/ComfyUI-find-models"
-Documentation = "https://github.com/your-username/ComfyUI-find-models#readme"
+Repository = "https://github.com/yobrave/ComfyUI-find-models"
+Documentation = "https://github.com/yobrave/ComfyUI-find-models#readme"
 
 [tool.comfy]
-PublisherId = "find-models"
+PublisherId = "yobrave"
 DisplayName = "ComfyUI Find Models"
 Icon = ""
