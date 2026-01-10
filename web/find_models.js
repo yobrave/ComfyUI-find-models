@@ -6,7 +6,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { createDialog } from "./components/Dialog.js";
-import { renderLoadingState } from "./components/LoadingState.js";
+import { renderLoadingState, renderNoWorkflowState } from "./components/LoadingState.js";
 import { t } from "./i18n/i18n.js";
 
 // 从 utils 导入所有功能函数
@@ -44,8 +44,65 @@ function showFindModelsDialog() {
     window._currentDialogContent = content;
     window._currentDialogResult = null;
     
-    // 获取当前工作流并分析
-    analyzeCurrentWorkflow(content);
+    // 确保使用最新的 workflow（清除旧的缓存，强制从 app.graph 获取）
+    // 这样可以确保即使切换了 workflow，第一次搜索也能正确显示
+    // 添加延迟机制，确保 workflow 已经完全加载
+    const startAnalysis = async () => {
+        // 等待一小段时间，确保 workflow 已经完全加载（特别是异步加载的情况）
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // 验证 workflow 是否有效，如果不有效则重试
+        let retryCount = 0;
+        const maxRetries = 3;
+        const retryDelay = 200;
+        
+        const tryAnalyze = async () => {
+            try {
+                if (!app?.graph) {
+                    if (retryCount < maxRetries) {
+                        retryCount++;
+                        await new Promise(resolve => setTimeout(resolve, retryDelay));
+                        return tryAnalyze();
+                    }
+                    content.innerHTML = renderNoWorkflowState();
+                    return;
+                }
+                
+                // 验证 workflow 是否有效
+                const currentWorkflow = app.graph.serialize();
+                if (!currentWorkflow || !currentWorkflow.nodes || currentWorkflow.nodes.length === 0) {
+                    if (retryCount < maxRetries) {
+                        retryCount++;
+                        await new Promise(resolve => setTimeout(resolve, retryDelay));
+                        return tryAnalyze();
+                    }
+                    content.innerHTML = renderNoWorkflowState();
+                    return;
+                }
+                
+                // 更新缓存（辅助作用）
+                if (typeof window !== 'undefined') {
+                    window._currentWorkflow = currentWorkflow;
+                }
+                
+                // 执行分析（analyzeCurrentWorkflow 会再次从 app.graph 获取最新 workflow）
+                analyzeCurrentWorkflow(content);
+            } catch (error) {
+                // 如果出错，重试或显示错误
+                if (retryCount < maxRetries) {
+                    retryCount++;
+                    await new Promise(resolve => setTimeout(resolve, retryDelay));
+                    return tryAnalyze();
+                }
+                content.innerHTML = renderLoadingState(`错误: ${error.message}`);
+            }
+        };
+        
+        await tryAnalyze();
+    };
+    
+    // 启动分析
+    startAnalysis();
     
     // 监听语言变更事件，重新渲染内容
     const languageChangeHandler = () => {
@@ -85,6 +142,85 @@ app.registerExtension({
         } catch (error) {
             // 忽略错误
         }
+        
+        // 监听 workflow 切换事件，更新缓存的 workflow
+        // 这样即使切换了 workflow，也能感知到变化
+        const updateWorkflowCache = () => {
+            try {
+                if (app?.graph) {
+                    const workflow = app.graph.serialize();
+                    if (workflow && workflow.nodes) {
+                        if (typeof window !== 'undefined') {
+                            window._currentWorkflow = workflow;
+                        }
+                    }
+                }
+            } catch (error) {
+                // 忽略错误
+            }
+        };
+        
+        // 监听 workflow 加载事件（ComfyUI 会在加载 workflow 时触发）
+        // 使用多种方式来监听 workflow 切换，确保能捕获到所有情况
+        const setupWorkflowListener = () => {
+            if (!app || !app.graph) {
+                // 如果 graph 还没初始化，延迟设置监听器
+                setTimeout(setupWorkflowListener, 500);
+                return;
+            }
+            
+            // 方法1: 监听 loadGraphData（加载 workflow 文件）
+            if (app.graph.loadGraphData) {
+                const originalLoadGraphData = app.graph.loadGraphData;
+                app.graph.loadGraphData = function(...args) {
+                    const result = originalLoadGraphData.apply(this, args);
+                    // 延迟更新，确保 graph 已完全加载
+                    setTimeout(updateWorkflowCache, 200);
+                    return result;
+                };
+            }
+            
+            // 方法2: 监听可能的 workflow 变化事件
+            // 使用 proxy 或直接监听 graph 的变化
+            try {
+                if (app.graph.onGraphRebuilt) {
+                    const originalOnGraphRebuilt = app.graph.onGraphRebuilt;
+                    app.graph.onGraphRebuilt = function(...args) {
+                        updateWorkflowCache();
+                        if (originalOnGraphRebuilt) {
+                            originalOnGraphRebuilt.apply(this, args);
+                        }
+                    };
+                }
+            } catch (error) {
+                // 如果无法设置监听器，忽略错误
+            }
+            
+            // 方法3: 定期检查 workflow 是否变化（备用方案）
+            // 如果 workflow 切换了，定期更新缓存
+            let lastWorkflowHash = null;
+            setInterval(() => {
+                try {
+                    if (app?.graph) {
+                        const workflow = app.graph.serialize();
+                        if (workflow && workflow.nodes) {
+                            // 简单的 hash 来检测 workflow 是否变化
+                            const currentHash = JSON.stringify(workflow.nodes.map(n => n.id)).substring(0, 100);
+                            if (lastWorkflowHash !== null && lastWorkflowHash !== currentHash) {
+                                // Workflow 发生了变化，更新缓存
+                                updateWorkflowCache();
+                            }
+                            lastWorkflowHash = currentHash;
+                        }
+                    }
+                } catch (error) {
+                    // 忽略错误
+                }
+            }, 1000); // 每秒检查一次
+        };
+        
+        // 初始化监听器
+        setupWorkflowListener();
         
         // 延迟添加按钮，确保 DOM 已加载
         setTimeout(() => {

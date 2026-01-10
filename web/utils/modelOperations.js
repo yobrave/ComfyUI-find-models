@@ -52,13 +52,15 @@ export async function refreshModelSearch(modelName, modelType, rowElement) {
         const installedNodeTypeMap = installedModelsData.nodeTypeMap || {};
         
         // 2. 重新提取 workflow 中的模型需求（获取节点类型映射）
+        // 总是从 app.graph 获取最新的 workflow，确保能感知到 workflow 切换
         let modelUsageMap = {};
         let modelNodeMap = {};
         let modelNodeTypeMap = {};
         
         try {
-            // 从全局状态获取 workflow（如果存在）
-            const workflow = window._currentWorkflow || (app?.graph ? app.graph.serialize() : null);
+            // 总是从 app.graph 获取最新的 workflow，不依赖缓存的
+            // 这样可以确保即使切换了 workflow，也能获取到正确的信息
+            const workflow = app?.graph ? app.graph.serialize() : null;
             if (workflow && workflow.nodes) {
                 const extracted = extractModelsFromWorkflow(workflow);
                 modelUsageMap = extracted.modelUsageMap || {};

@@ -27,14 +27,17 @@ import { saveOriginalRowsOrder, bindSearchFunctionality, searchAndSortModels, re
 export async function analyzeCurrentWorkflow(contentDiv) {
     try {
         // 步骤 1: 获取当前工作流数据
-        const workflow = app.graph.serialize();
+        // 每次都从 app.graph 获取最新的 workflow，确保即使切换了 workflow 也能正确显示
+        // 不依赖任何缓存，这样可以确保第一次搜索时使用的是最新的 workflow
+        const workflow = app?.graph ? app.graph.serialize() : null;
         
         if (!workflow || !workflow.nodes || workflow.nodes.length === 0) {
             contentDiv.innerHTML = renderNoWorkflowState();
             return;
         }
         
-        // 保存 workflow 到全局状态，供重新搜索时使用
+        // 保存 workflow 到全局状态，供重新搜索时使用（虽然重新搜索也会从 app.graph 获取最新）
+        // 但保存一下可以用于调试或其他用途
         if (typeof window !== 'undefined') {
             window._currentWorkflow = workflow;
         }
