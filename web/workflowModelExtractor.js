@@ -73,7 +73,7 @@ export const MODEL_LOADER_NODES = {
 };
 
 // 常见的模型文件扩展名
-const MODEL_FILE_EXTENSIONS = [
+export const MODEL_FILE_EXTENSIONS = [
     '.safetensors', '.ckpt', '.pt', '.pth', '.bin', 
     '.onnx', '.pb', '.tflite', '.h5', '.pkl', '.pth.tar'
 ];

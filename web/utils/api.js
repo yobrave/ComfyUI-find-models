@@ -3,6 +3,7 @@
  */
 
 import { api } from "../../../scripts/api.js";
+import { MODEL_FILE_EXTENSIONS } from "../workflowModelExtractor.js";
 
 // 从 ComfyUI API 获取 extra_model_paths 配置
 export async function getExtraModelPaths() {
@@ -105,29 +106,73 @@ export async function getInstalledModels() {
             }
         }
         
+        // 辅助函数：检查字符串是否包含模型文件后缀
+        function hasModelExtension(str) {
+            if (typeof str !== "string") return false;
+            return MODEL_FILE_EXTENSIONS.some(ext => str.toLowerCase().endsWith(ext.toLowerCase()));
+        }
+        
+        // 辅助函数：递归提取数组中的所有字符串，并过滤出包含模型后缀的
+        function extractModelStrings(arr) {
+            if (!Array.isArray(arr)) {
+                if (typeof arr === "string" && hasModelExtension(arr)) {
+                    return [arr];
+                }
+                return [];
+            }
+            
+            const result = [];
+            for (const item of arr) {
+                if (typeof item === "string") {
+                    if (hasModelExtension(item)) {
+                        result.push(item);
+                    }
+                } else if (Array.isArray(item)) {
+                    // 递归处理嵌套数组
+                    result.push(...extractModelStrings(item));
+                } else if (typeof item === "object" && item !== null) {
+                    // 处理对象，尝试获取 name 或 value 属性
+                    const str = item.name || item.value || String(item);
+                    if (typeof str === "string" && hasModelExtension(str)) {
+                        result.push(str);
+                    }
+                }
+            }
+            return result;
+        }
+        
         // 尝试从其他节点获取模型列表
         for (const [nodeType, nodeInfo] of Object.entries(objectInfo)) {
             if (nodeInfo && nodeInfo.input) {
                 const required = nodeInfo.input.required || {};
                 const optional = nodeInfo.input.optional || {};
                 
-                // 检查所有可能的模型字段
+                // 检查所有字段，通过值中的模型后缀来判断是否为模型
                 for (const [field, value] of Object.entries({...required, ...optional})) {
-                    if ((field.includes("model") || field.includes("name") || field.includes("lora") || field.includes("vae") || field.includes("clip")) 
-                        && Array.isArray(value) && value.length > 0) {
-                        const stringArray = ensureStringArray(value);
-                        if (stringArray.length > 0) {
+                    if (Array.isArray(value) && value.length > 0) {
+                        const modelStrings = extractModelStrings(value);
+                        if (modelStrings.length > 0) {
                             // 根据字段名和节点类型分类
                             if (field.includes("lora") || nodeType.includes("Lora")) {
-                                installed["LoRA"] = [...new Set([...installed["LoRA"], ...stringArray])];
+                                installed["LoRA"] = [...new Set([...installed["LoRA"], ...modelStrings])];
                             } else if (field.includes("vae") || nodeType.includes("VAE")) {
-                                installed["VAE"] = [...new Set([...installed["VAE"], ...stringArray])];
+                                installed["VAE"] = [...new Set([...installed["VAE"], ...modelStrings])];
                             } else if (field.includes("clip") && !field.includes("vision")) {
-                                installed["CLIP"] = [...new Set([...installed["CLIP"], ...stringArray])];
+                                installed["CLIP"] = [...new Set([...installed["CLIP"], ...modelStrings])];
                             } else if (field.includes("control") || nodeType.includes("Control")) {
-                                installed["ControlNet"] = [...new Set([...installed["ControlNet"], ...stringArray])];
+                                installed["ControlNet"] = [...new Set([...installed["ControlNet"], ...modelStrings])];
                             } else if (field.includes("checkpoint") || field.includes("ckpt") || nodeType.includes("Checkpoint")) {
-                                installed["主模型"] = [...new Set([...installed["主模型"], ...stringArray])];
+                                installed["主模型"] = [...new Set([...installed["主模型"], ...modelStrings])];
+                            } else if (field.includes("upscale") || field.includes("pixel") || nodeType.includes("Upscale")) {
+                                installed["放大模型"] = [...new Set([...installed["放大模型"], ...modelStrings])];
+                            } else {
+                                // 其他包含模型后缀的字段，根据后缀或节点类型判断
+                                const hasSafetensors = modelStrings.some(s => s.toLowerCase().endsWith(".safetensors") || s.toLowerCase().endsWith(".ckpt"));
+                                if (hasSafetensors && (nodeType.includes("Checkpoint") || field.includes("checkpoint") || field.includes("ckpt"))) {
+                                    installed["主模型"] = [...new Set([...installed["主模型"], ...modelStrings])];
+                                } else {
+                                    installed["其他"] = [...new Set([...installed["其他"], ...modelStrings])];
+                                }
                             }
                         }
                     }
