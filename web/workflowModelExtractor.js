@@ -107,6 +107,46 @@ function looksLikeModelFileName(value) {
     return modelKeywords.some(keyword => fileNameLower.includes(keyword));
 }
 
+// 检查模型名是否有效（过滤掉 null、None、use same 等无效值）
+export function isValidModelName(modelName) {
+    if (!modelName || typeof modelName !== 'string') {
+        return false;
+    }
+    
+    const trimmed = modelName.trim();
+    
+    // 过滤掉空字符串
+    if (!trimmed || trimmed.length < 2) {
+        return false;
+    }
+    
+    // 过滤掉常见的无效值（不区分大小写）
+    const invalidValues = [
+        'null',
+        'none',
+        'use same',
+        '(use same)',
+        'auto',
+        'default',
+        'true',
+        'false',
+        'undefined'
+    ];
+    
+    const trimmedLower = trimmed.toLowerCase();
+    if (invalidValues.includes(trimmedLower)) {
+        return false;
+    }
+    
+    // 过滤掉只有数字或特殊字符的字符串
+    if (/^[\d\s\-\+\.]+$/.test(trimmed)) {
+        return false;
+    }
+    
+    // 如果通过了所有检查，认为是有效的模型名
+    return true;
+}
+
 // 检查节点是否被使用
 export function isNodeUsed(node) {
     // 检查节点的 mode 值（LiteGraph 的节点活动状态）
@@ -186,7 +226,8 @@ export function extractModelsFromWorkflow(workflow) {
                     // 清理文件名（移除路径，只保留文件名）
                     modelName = modelName.split(/[/\\]/).pop().trim();
                     
-                    if (modelName) {
+                    // 验证模型名是否有效（过滤掉 null、None、use same 等无效值）
+                    if (modelName && isValidModelName(modelName)) {
                         // 检查节点是否被使用
                         const isUsed = isNodeUsed(node);
                         const modelKey = `${modelType}:${modelName}`;
@@ -307,9 +348,8 @@ export function extractModelsFromWorkflow(workflow) {
                     // 清理文件名（移除路径，只保留文件名）
                     modelName = modelName.split(/[/\\]/).pop().trim();
                     
-                    // 确保是有效的文件名（不是空字符串、数字、布尔值等）
-                    if (modelName && modelName.length > 2 && !/^\d+(\.\d+)?$/.test(modelName) && 
-                        modelName !== 'true' && modelName !== 'false' && modelName !== 'AUTO') {
+                    // 验证模型名是否有效（过滤掉 null、None、use same 等无效值）
+                    if (modelName && isValidModelName(modelName)) {
                         
                         // 尝试推断模型类型（基于节点类型、输入字段名和文件名）
                         let inferredType = "其他";

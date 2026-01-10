@@ -3,7 +3,7 @@
  */
 
 import { api } from "../../../scripts/api.js";
-import { MODEL_FILE_EXTENSIONS } from "../workflowModelExtractor.js";
+import { MODEL_FILE_EXTENSIONS, isValidModelName } from "../workflowModelExtractor.js";
 
 // 从 ComfyUI API 获取 extra_model_paths 配置
 export async function getExtraModelPaths() {
@@ -55,7 +55,7 @@ export async function getInstalledModels() {
         // 存储每个模型对应的节点类型（key: "modelType:modelName", value: [nodeType1, nodeType2, ...]）
         const installedModelNodeTypeMap = {};
         
-        // 辅助函数：确保值是字符串数组
+        // 辅助函数：确保值是字符串数组，并过滤掉无效的模型名
         function ensureStringArray(arr) {
             if (!Array.isArray(arr)) {
                 return [];
@@ -69,7 +69,14 @@ export async function getInstalledModels() {
                 } else {
                     return String(item);
                 }
-            }).filter(item => item && typeof item === "string");
+            }).filter(item => {
+                // 过滤掉空值和无效的模型名（如 null、None、use same 等）
+                if (!item || typeof item !== "string") {
+                    return false;
+                }
+                const trimmed = item.trim();
+                return trimmed && isValidModelName(trimmed);
+            });
         }
         
         // 辅助函数：记录模型和节点类型的映射

@@ -13,6 +13,8 @@ This tool detects the models required by your workflow in the ComfyUI interface 
 ![](./assets/UI-3.png)
 > Installed interface
 
+![](./assets/UI-4.png)
+> highlight node and jump to node on window center
 
 ## Installation
 
