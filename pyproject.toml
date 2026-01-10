@@ -1,17 +1,17 @@
 [project]
-name = "comfyui-find-models"
-description = "ComfyUI Find Models - 在ComfyUI界面中查找和管理工作流所需的模型，显示模型状态和派系信息"
+name = "ComfyUI Find Models"
+description = "This tool detects the models required by your workflow in the ComfyUI interface and provides similar download results from civitai.com/models and huggingface.co, or Google search results（Manual open new window tab）"
 version = "1.0.0"
-license = { text = "MIT" }
-readme = "README.md"
-requires-python = ">=3.8"
-dependencies = []
+license = "LICENSE"
 
 [project.urls]
 Repository = "https://github.com/yobrave/ComfyUI-find-models"
-Documentation = "https://github.com/yobrave/ComfyUI-find-models#readme"
+#  Used by Comfy Registry https://registry.comfy.org
 
 [tool.comfy]
 PublisherId = "yobrave"
 DisplayName = "ComfyUI Find Models"
 Icon = ""
+includes = [] 
+# "requires-comfyui" = ">=1.0.0"  # ComfyUI version compatibility
+
