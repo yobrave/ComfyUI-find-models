@@ -24,7 +24,8 @@ import { bindHighlightButtons } from "./nodeHighlight.js";
 import { saveOriginalRowsOrder, bindSearchFunctionality, searchAndSortModels, restoreOriginalOrder } from "./search.js";
 
 // 分析当前工作流（完全在前端完成）
-export async function analyzeCurrentWorkflow(contentDiv) {
+// skipCache: 如果为 true，跳过缓存检查，直接搜索所有缺失的模型
+export async function analyzeCurrentWorkflow(contentDiv, skipCache = false) {
     try {
         // 步骤 1: 获取当前工作流数据
         // 每次都从 app.graph 获取最新的 workflow，确保即使切换了 workflow 也能正确显示
@@ -68,13 +69,20 @@ export async function analyzeCurrentWorkflow(contentDiv) {
         const missingModels = Object.values(status.modelInfo).filter(m => !m.installed);
         
         // 批量检查缓存，优先使用缓存的结果（同步执行，快速）
+        // 如果 skipCache 为 true，跳过缓存检查，所有缺失的模型都需要搜索
         const modelsToSearch = [];
-        for (const model of missingModels) {
-            const cached = getCachedResults(model.name);
-            if (cached !== null) {
-                modelLinks[model.name] = cached;
-            } else {
-                modelsToSearch.push(model);
+        if (skipCache) {
+            // 跳过缓存，所有缺失的模型都需要搜索
+            modelsToSearch.push(...missingModels);
+        } else {
+            // 正常模式：检查缓存
+            for (const model of missingModels) {
+                const cached = getCachedResults(model.name);
+                if (cached !== null) {
+                    modelLinks[model.name] = cached;
+                } else {
+                    modelsToSearch.push(model);
+                }
             }
         }
         
@@ -112,9 +120,10 @@ export async function analyzeCurrentWorkflow(contentDiv) {
                 });
                 
                 // 并行搜索这一批的模型
+                // 如果 skipCache 为 true，传递 skipCache=true 给 searchModelLinks
                 const searchPromises = batch.map(async (model) => {
                     try {
-                        const links = await searchModelLinks(model.name, model.type, false, getCachedResults, setCachedResults);
+                        const links = await searchModelLinks(model.name, model.type, skipCache, getCachedResults, setCachedResults);
                         if (links.length > 0) {
                             modelLinks[model.name] = links;
                         }

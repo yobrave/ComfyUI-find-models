@@ -21,6 +21,9 @@ let VERSION = "1.0.0";
 let _currentDialogResult = null;
 let _currentDialogContent = null;
 
+// 全局标志：是否跳过缓存（当 r 键刷新节点数据时设置为 true）
+let _skipCache = false;
+
 // 显示查找模型对话框
 function showFindModelsDialog() {
     // 使用组件创建对话框
@@ -86,7 +89,11 @@ function showFindModelsDialog() {
                 }
                 
                 // 执行分析（analyzeCurrentWorkflow 会再次从 app.graph 获取最新 workflow）
-                analyzeCurrentWorkflow(content);
+                // 如果设置了跳过缓存标志，传递 skipCache 参数
+                const skipCache = window._skipCacheForFindModels || false;
+                analyzeCurrentWorkflow(content, skipCache);
+                // 重置标志（只使用一次）
+                window._skipCacheForFindModels = false;
             } catch (error) {
                 // 如果出错，重试或显示错误
                 if (retryCount < maxRetries) {
@@ -221,6 +228,32 @@ app.registerExtension({
         
         // 初始化监听器
         setupWorkflowListener();
+        
+        // 监听 r 键刷新事件（ComfyUI 使用 r 键刷新节点数据）
+        const setupRefreshListener = () => {
+            // 监听键盘事件
+            document.addEventListener('keydown', (e) => {
+                // 检查是否按下了 r 键（且不在输入框中）
+                if (e.key === 'r' || e.key === 'R') {
+                    const target = e.target;
+                    // 如果焦点不在输入框、文本区域等可编辑元素上
+                    if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable) {
+                        // 设置跳过缓存标志
+                        window._skipCacheForFindModels = true;
+                        // 如果对话框已打开，延迟重新分析工作流（等待 object_info 更新）
+                        if (window._currentDialogContent) {
+                            // 延迟一下，确保 ComfyUI 的 object_info 已更新
+                            setTimeout(() => {
+                                analyzeCurrentWorkflow(window._currentDialogContent, true);
+                            }, 500);
+                        }
+                    }
+                }
+            });
+        };
+        
+        // 延迟设置刷新监听器
+        setTimeout(setupRefreshListener, 1000);
         
         // 延迟添加按钮，确保 DOM 已加载
         setTimeout(() => {
